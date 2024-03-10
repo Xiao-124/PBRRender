@@ -1,0 +1,34 @@
+﻿  imgui_impl_glfw.cpp
+  imgui_impl_opengl3.cpp
+  imgui.cpp
+  ImGuiExtension.cpp
+  imgui_draw.cpp
+  imgui_widgets.cpp
+  AABB.cpp
+  App.cpp
+D:\C++Programe\RenderSample\FRAME\Camera.h(9,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
+  Camera.cpp
+D:\C++Programe\RenderSample\FRAME\Camera.h(9,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
+  Common.cpp
+  GLFWWindow.cpp
+  GUI.cpp
+  GameObject.cpp
+  InputManager.cpp
+  Interface.cpp
+D:\C++Programe\RenderSample\FRAME\Camera.h(9,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
+  MainGUI.cpp
+  Mesh.cpp
+  Model.cpp
+  RenderPass.cpp
+  ResourceManager.cpp
+D:\C++Programe\RenderSample\FRAME\Camera.h(9,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
+  正在生成代码...
+  正在编译...
+  Shader.cpp
+  Tools.cpp
+  UBO4ProjectionWorld.cpp
+D:\C++Programe\RenderSample\FRAME\Camera.h(9,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
+  Utils.cpp
+  正在生成代码...
+    正在创建库 ..\x64\Debug\FRAME.lib 和对象 ..\x64\Debug\FRAME.exp
+  FRAME.vcxproj -> D:\C++Programe\RenderSample\x64\Debug\FRAME.dll
