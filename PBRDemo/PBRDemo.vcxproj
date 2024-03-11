@@ -154,6 +154,7 @@
     <ClCompile Include="ModelRenderPass.cpp" />
     <ClCompile Include="ShadowMapPass.cpp" />
     <ClCompile Include="SkyBoxPass.cpp" />
+    <ClCompile Include="SSAORenderPass.cpp" />
     <ClCompile Include="ToneMapper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -179,11 +180,14 @@
     <ClInclude Include="ModelRenderPass.h" />
     <ClInclude Include="ShadowMapPass.h" />
     <ClInclude Include="SkyBoxPass.h" />
+    <ClInclude Include="SSAORenderPass.h" />
     <ClInclude Include="ToneMapper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ColorGrading_FS.glsl" />
     <None Include="ColorGrading_VS.glsl" />
+    <None Include="Depth_FS.glsl" />
+    <None Include="Depth_VS.glsl" />
     <None Include="DfgIBL_FS.glsl" />
     <None Include="DfgIBL_VS.glsl" />
     <None Include="EquirectangularToCubeMap_FS.glsl" />
@@ -207,6 +211,8 @@
     <None Include="SpecularFilter_FS.glsl" />
     <None Include="SpecularFilter_VS.glsl" />
     <None Include="SphericalHarmonics_CS.glsl" />
+    <None Include="SSAO_FS.glsl" />
+    <None Include="SSAO_VS.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

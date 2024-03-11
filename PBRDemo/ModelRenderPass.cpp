@@ -101,8 +101,8 @@ void CModelRenderPass::updateV()
 	iblIntensity *= exposure;
 	m_pShader->setFloatUniformValue("iblLuminance", iblIntensity);
 
-
-	m_pShader->setFloatUniformValue("baseColor", material.baseColor.r, material.baseColor.g, material.baseColor.b, material.baseColor.a);
+	LinearColorA mcolor = Color::toLinear<ACCURATE>(sRGBColorA(material.baseColor.r, material.baseColor.g, material.baseColor.b, material.baseColor.a));
+	m_pShader->setFloatUniformValue("baseColor", mcolor.r, mcolor.g, mcolor.b, mcolor.a);
 	m_pShader->setFloatUniformValue("metallic", material.metallic);
 	m_pShader->setFloatUniformValue("roughness", material.roughness);
 	m_pShader->setFloatUniformValue("reflectance", material.reflectance);

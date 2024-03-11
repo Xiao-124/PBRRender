@@ -87,6 +87,9 @@
     <ClCompile Include="GroundObject.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="SSAORenderPass.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ModelLoad.h">
@@ -156,6 +159,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="GroundObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SSAORenderPass.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -233,6 +239,18 @@
       <Filter>Shader</Filter>
     </None>
     <None Include="GBufferPass_FS.glsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="Depth_VS.glsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="Depth_FS.glsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="SSAO_VS.glsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="SSAO_FS.glsl">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>

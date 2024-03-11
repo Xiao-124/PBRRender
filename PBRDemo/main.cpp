@@ -9,6 +9,7 @@
 #include "SkyBoxPass.h"
 #include "ShadowMapPass.h"
 #include "GroundObject.h"
+#include "SSAORenderPass.h"
 int main()
 {
 
@@ -23,9 +24,11 @@ int main()
 
 	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<IBLLigthPass>("IBLLightPass", 0));
 	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<CShadowMapPass>("CShadowMapPass", 1));
-	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<CSkyboxPass>("SkyboxPass", 2));
-	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<CModelRenderPass>("MonkeyRenderPass", 3));
-	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<CColorGradingPass>("ColorGradingPass", 4));
+	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<CSSAORenderPass>("CSSAORenderPass", 2));
+
+	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<CSkyboxPass>("SkyboxPass", 3));
+	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<CModelRenderPass>("MonkeyRenderPass", 4));
+	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<CColorGradingPass>("ColorGradingPass", 5));
 	
 
 	ElayGraphics::ResourceManager::registerSubGUI(std::make_shared<CCustomGUI>("CustomGUI", 1));
