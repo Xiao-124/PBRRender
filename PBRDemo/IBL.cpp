@@ -9,7 +9,7 @@
 #include "Shader.h"
 #include "Common.h"
 #include "glmextend.h"
-
+#include <Basetsd.h>
 
 
 IBLLigthPass::IBLLigthPass(const std::string& vPassName, int vExcutionOrder) : IRenderPass(vPassName, vExcutionOrder)
@@ -33,7 +33,7 @@ static inline constexpr T log4(T x)
     return std::log2(x) * T(0.5);
 }
 
-#include <Basetsd.h>
+
 typedef SSIZE_T ssize_t;
 
 static inline float sphereQuadrantArea(float x, float y) 

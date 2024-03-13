@@ -37,7 +37,4 @@ void main()
 	//v2f_Normal = _Normal;
 	v2f_FragPosInViewSpace = vec3(FragPosInViewSpace);
 
-
-
-
 }

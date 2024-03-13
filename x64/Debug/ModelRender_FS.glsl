@@ -19,7 +19,7 @@ uniform vec3 lightDirection;
 uniform vec4 lightColor;
 uniform vec3 cameraPos;
 uniform vec4 sun;
-float exposure;
+uniform float exposure;
 uniform float iblLuminance;
 
 uniform vec4  baseColor;
@@ -80,6 +80,11 @@ vec3 getWorldReflectedVector()
 float getNdotV() 
 {
     return shading_NoV;
+}
+
+float getExposure()
+{
+    return exposure;
 }
 
 void computeShadingParams() 
@@ -403,6 +408,12 @@ vec3 specularDFG(const PixelParams pixel)
 {
     return mix(pixel.dfg.xxx, pixel.dfg.yyy, pixel.f0);
 }
+
+float singleBounceAO(float visibility)
+{
+   return visibility;
+}
+
 void evaluateIBL(const MaterialInputs material, const PixelParams pixel, inout vec3 color) 
 {
     // specular layer
@@ -420,12 +431,13 @@ void evaluateIBL(const MaterialInputs material, const PixelParams pixel, inout v
 
     // Ambient occlusion
     float ssao = 1.0f;
-    float diffuseAO = 1.0f;
+    float diffuseAO = min(material.ambientOcclusion, ssao);
     float specularAO = 1.0f;
 
 
     // diffuse layer
-    float diffuseBRDF = 1.0f; // Fd_Lambert() is baked in the SH below
+    //float diffuseBRDF = 1.0f; // Fd_Lambert() is baked in the SH below
+    float diffuseBRDF = singleBounceAO(diffuseAO);
     vec3 diffuseNormal = shading_normal;
     //vec3 Fd = vec3(0,0,0);
 
@@ -442,6 +454,11 @@ void evaluateIBL(const MaterialInputs material, const PixelParams pixel, inout v
 
 }
 
+float computeDiffuseAlpha(float a) 
+{
+    return a;
+}
+
 vec4 evaluateLights(const MaterialInputs material) 
 {
     PixelParams pixel;
@@ -455,19 +472,25 @@ vec4 evaluateLights(const MaterialInputs material)
     //点光或者聚光
     //evaluatePunctualLights(material, pixel, color);
 
-    return vec4(color, 1.0f);
+    color *= material.baseColor.a;
+
+    return vec4(color, computeDiffuseAlpha(material.baseColor.a));
 }
 
 void addEmissive(const MaterialInputs material, inout vec4 color) 
 {
 
+    highp vec4 emissive = material.emissive;
+    highp float attenuation = mix(1.0, getExposure(), emissive.w);
+    attenuation *= color.a;
+    color.rgb += emissive.rgb * attenuation;
 
 }
 
 vec4 evaluateMaterial(const MaterialInputs material) 
 {
     vec4 color = evaluateLights(material);
-    //addEmissive(material, color);
+    addEmissive(material, color);
     return color;
 }
 
