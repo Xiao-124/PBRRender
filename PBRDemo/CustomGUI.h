@@ -53,6 +53,11 @@ struct MaterialSettings
     float reflectance = 0.5;
     glm::vec4 emissive = glm::vec4(0.0, 0.0, 0.0, 0);
     float ambientOcclusion = 1.0;
+
+    glm::vec4 sheenColor = glm::vec4(0,0,0,0);
+    float sheenRoughness = 0;
+    float clearCoat = 0;
+    float clearCoatRoughness = 0;
 };
 
 class CCustomGUI : public IGUI

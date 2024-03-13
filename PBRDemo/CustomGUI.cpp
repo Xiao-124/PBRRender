@@ -99,6 +99,10 @@ void CCustomGUI::updateV()
         sliderFloat("reflectance", &material.reflectance, 0.0f, 1.0f);
         sliderFloat("ambientOcclusion", &material.ambientOcclusion, 0.0f, 1.0f);
         colorEdit("emissive", material.emissive);
+        colorEdit("sheenColor", material.sheenColor);
+        sliderFloat("sheenRoughness", &material.sheenRoughness, 0.0f, 1.0f);
+        sliderFloat("clearCoat", &material.clearCoat, 0.0f, 1.0f);
+        sliderFloat("clearCoatRoughness", &material.clearCoatRoughness, 0.0f, 1.0f);
         unIndent();
     }
 

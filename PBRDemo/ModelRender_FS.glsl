@@ -28,6 +28,10 @@ uniform float roughness;
 uniform float reflectance;
 uniform vec4  emissive;
 uniform float ambientOcclusion;
+uniform vec3  material_sheenColor;
+uniform float material_sheenRoughness;
+uniform float material_clearCoat;
+uniform float material_clearCoatRoughness;
 
 
 uniform vec3 frame_iblSH[9];
@@ -143,7 +147,27 @@ struct MaterialInputs
     float reflectance;
     vec4  emissive;
     float ambientOcclusion;
+
+    vec3 sheenColor;
+    float sheenRoughness;
+
+    float clearCoat;
+    float clearCoatRoughness;
+
+
 };
+
+struct SSAOInterpolationCache 
+{
+    highp vec4 weights;
+    highp vec2 uv;
+
+};
+
+float max3(const vec3 v) 
+{
+    return max(v.x, max(v.y, v.z));
+}
 
 vec3 computeDiffuseColor(const vec4 baseColor, float metallic) 
 {
@@ -195,6 +219,17 @@ vec3 F_Schlick(const vec3 f0, float f90, float VoH)
     return f0 + (f90 - f0) * pow5(1.0 - VoH);
 }
 
+vec3 F_Schlick(const vec3 f0, float VoH) 
+{
+    float f = pow(1.0 - VoH, 5.0);
+    return f + f0 * (1.0 - f);
+}
+
+float F_Schlick(float f0, float f90, float VoH) 
+{
+    return f0 + (f90 - f0) * pow5(1.0 - VoH);
+}
+
 float V_SmithGGXCorrelated(float roughness, float NoV, float NoL) 
 {
     float a2 = roughness * roughness;
@@ -226,6 +261,59 @@ float Fd_Lambert()
     return 1.0 / PI;
 }
 
+float V_Kelemen(float LoH) 
+{
+    // Kelemen 2001, "A Microfacet Based Coupled Specular-Matte BRDF Model with Importance Sampling"
+    return saturateMediump(0.25 / (LoH * LoH));
+}
+
+float V_Neubelt(float NoV, float NoL) 
+{
+    // Neubelt and Pettineo 2013, "Crafting a Next-gen Material Pipeline for The Order: 1886"
+    return saturateMediump(1.0 / (4.0 * (NoL + NoV - NoL * NoV)));
+}
+
+float D_Charlie(float roughness, float NoH) 
+{
+    // Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF"
+    float invAlpha  = 1.0 / roughness;
+    float cos2h = NoH * NoH;
+    float sin2h = max(1.0 - cos2h, 0.0078125); // 2^(-14/2), so sin2h^2 > 0 in fp16
+    return (2.0 + invAlpha) * pow(sin2h, invAlpha * 0.5) / (2.0 * PI);
+}
+
+
+float specularAO(float NoV, float visibility, float roughness, const in SSAOInterpolationCache cache) 
+{
+    float specularAO = 1.0;
+    return specularAO;
+}
+
+float distributionClearCoat(float roughness, float NoH, const vec3 h) 
+{
+    return D_GGX(roughness, NoH, h);
+
+}
+
+float visibilityClearCoat(float LoH) 
+{
+
+    return V_Kelemen(LoH);
+
+}
+
+float distributionCloth(float roughness, float NoH) 
+{
+
+    return D_Charlie(roughness, NoH);
+
+}
+
+float visibilityCloth(float NoV, float NoL) 
+{
+    return V_Neubelt(NoV, NoL);
+}
+
 struct PixelParams 
 {
     vec3  diffuseColor;
@@ -235,20 +323,56 @@ struct PixelParams
     float roughness;
     vec3  dfg;
     vec3  energyCompensation;
+
+    float clearCoat;
+    float clearCoatPerceptualRoughness;
+    float clearCoatRoughness;
+    vec3  sheenColor;
+    float sheenRoughness;
+    float sheenPerceptualRoughness;
+    float sheenScaling;
+    float sheenDFG;
+
 };
 
+/*
+vec3 anisotropicLobe(const PixelParams pixel, const Light light, const vec3 h,
+        float NoV, float NoL, float NoH, float LoH) {
+
+    vec3 l = light.l;
+    vec3 t = pixel.anisotropicT;
+    vec3 b = pixel.anisotropicB;
+    vec3 v = shading_view;
+
+    float ToV = dot(t, v);
+    float BoV = dot(b, v);
+    float ToL = dot(t, l);
+    float BoL = dot(b, l);
+    float ToH = dot(t, h);
+    float BoH = dot(b, h);
+
+    // Anisotropic parameters: at and ab are the roughness along the tangent and bitangent
+    // to simplify materials, we derive them from a single roughness parameter
+    // Kulla 2017, "Revisiting Physically Based Shading at Imageworks"
+    float at = max(pixel.roughness * (1.0 + pixel.anisotropy), MIN_ROUGHNESS);
+    float ab = max(pixel.roughness * (1.0 - pixel.anisotropy), MIN_ROUGHNESS);
+
+    // specular anisotropic BRDF
+    float D = distributionAnisotropic(at, ab, ToH, BoH, NoH);
+    float V = visibilityAnisotropic(pixel.roughness, at, ab, ToV, BoV, ToL, BoL, NoV, NoL);
+    vec3  F = fresnel(pixel.f0, LoH);
+
+    return (D * V) * F;
+}
+*/
 
 vec3 isotropicLobe(const PixelParams pixel, const Light light, const vec3 h,
         float NoV, float NoL, float NoH, float LoH) 
 {
 
-    float D = clamp(distribution(pixel.roughness, NoH, h), 0.0, 1.0);
-    float V = clamp(visibility(pixel.roughness, NoV, NoL), 0.0, 1.0);
-
-    //float D = distribution(pixel.roughness, NoH, h);
-    //float V = visibility(pixel.roughness, NoV, NoL);
+    float D = distribution(pixel.roughness, NoH, h);
+    float V = visibility(pixel.roughness, NoV, NoL);
     vec3  F = fresnel(pixel.f0, LoH);
-    //return F;
     return (D * V) * F;
 }
 
@@ -269,6 +393,26 @@ vec3 diffuseLobe(const PixelParams pixel, float NoV, float NoL, float LoH)
     return pixel.diffuseColor * diffuse(pixel.roughness, NoV, NoL, LoH);
 }
 
+vec3 sheenLobe(const PixelParams pixel, float NoV, float NoL, float NoH) 
+{
+    float D = distributionCloth(pixel.sheenRoughness, NoH);
+    float V = visibilityCloth(NoV, NoL);
+
+    return (D * V) * pixel.sheenColor;
+}
+
+float clearCoatLobe(const PixelParams pixel, const vec3 h, float NoH, float LoH, out float Fcc) 
+{
+    float clearCoatNoH = NoH;
+
+    // clear coat specular lobe
+    float D = distributionClearCoat(pixel.clearCoatRoughness, clearCoatNoH, h);
+    float V = visibilityClearCoat(LoH);
+    float F = F_Schlick(0.04, 1.0, LoH) * pixel.clearCoat; // fix IOR to 1.5
+
+    Fcc = F;
+    return D * V * F;
+}
 
 vec3 surfaceShading(const PixelParams pixel, const Light light, float occlusion) 
 {
@@ -281,6 +425,15 @@ vec3 surfaceShading(const PixelParams pixel, const Light light, float occlusion)
     vec3 Fd = diffuseLobe(pixel, NoV, NoL, LoH);
     vec3 color = Fd + Fr * pixel.energyCompensation;
 
+    color *= pixel.sheenScaling;
+    color += sheenLobe(pixel, NoV, NoL, NoH);
+
+    float Fcc;
+    float clearCoat = clearCoatLobe(pixel, h, NoH, LoH, Fcc);
+    float attenuation = 1.0 - Fcc;
+
+    color *= attenuation;
+    color += clearCoat;
 
     return (color * light.colorIntensity.rgb)*(light.colorIntensity.w * NoL *light.attenuation);
 
@@ -307,6 +460,15 @@ void getRoughnessPixelParams(const MaterialInputs material, inout PixelParams pi
     pixel.roughness = perceptualRoughnessToRoughness(pixel.perceptualRoughness);
 }
 
+void getSheenPixelParams(const MaterialInputs material, inout PixelParams pixel) 
+{
+    pixel.sheenColor = material.sheenColor;
+    float sheenPerceptualRoughness = material.sheenRoughness;
+    sheenPerceptualRoughness = clamp(sheenPerceptualRoughness, MIN_PERCEPTUAL_ROUGHNESS, 1.0);
+    pixel.sheenPerceptualRoughness = sheenPerceptualRoughness;
+    pixel.sheenRoughness = perceptualRoughnessToRoughness(sheenPerceptualRoughness);
+}
+
 vec3 PrefilteredDFG_LUT(float lod, float NoV) 
 {
     // coord = sqrt(linear_roughness), which is the mapping used by cmgen.
@@ -323,16 +485,47 @@ vec3 prefilteredDFG(float perceptualRoughness, float NoV)
     return PrefilteredDFG_LUT(perceptualRoughness, NoV);
 }
 
+vec3 f0ClearCoatToSurface(const vec3 f0) 
+{
+    // Approximation of iorTof0(f0ToIor(f0), 1.5)
+    // This assumes that the clear coat layer has an IOR of 1.5
+    return saturate(f0 * (f0 * (0.941892 - 0.263008 * f0) + 0.346479) - 0.0285998);
+}
+
+
+void getClearCoatPixelParams(const MaterialInputs material, inout PixelParams pixel) 
+{
+
+    pixel.clearCoat = material.clearCoat;
+
+    // Clamp the clear coat roughness to avoid divisions by 0
+    float clearCoatPerceptualRoughness = material.clearCoatRoughness;
+    clearCoatPerceptualRoughness =
+            clamp(clearCoatPerceptualRoughness, MIN_PERCEPTUAL_ROUGHNESS, 1.0);
+
+    pixel.clearCoatPerceptualRoughness = clearCoatPerceptualRoughness;
+    pixel.clearCoatRoughness = perceptualRoughnessToRoughness(clearCoatPerceptualRoughness);
+
+    // The base layer's f0 is computed assuming an interface from air to an IOR
+    // of 1.5, but the clear coat layer forms an interface from IOR 1.5 to IOR
+    // 1.5. We recompute f0 by first computing its IOR, then reconverting to f0
+    // by using the correct interface
+    pixel.f0 = mix(pixel.f0, f0ClearCoatToSurface(pixel.f0), pixel.clearCoat);
+}
 
 void getEnergyCompensationPixelParams(inout PixelParams pixel) 
 {
     pixel.dfg = prefilteredDFG(pixel.perceptualRoughness, shading_NoV);
     pixel.energyCompensation = vec3(1.0);
+    pixel.sheenDFG = prefilteredDFG(pixel.sheenPerceptualRoughness, shading_NoV).z;
+    pixel.sheenScaling = 1.0 - max3(pixel.sheenColor) * pixel.sheenDFG;
 }
 
 void getPixelParams(const MaterialInputs material, out PixelParams pixel) 
 {
     getCommonPixelParams(material, pixel);
+    getSheenPixelParams(material, pixel);
+    getClearCoatPixelParams(material, pixel);
     getRoughnessPixelParams(material, pixel);
     getEnergyCompensationPixelParams(pixel);
 }
@@ -414,8 +607,48 @@ float singleBounceAO(float visibility)
    return visibility;
 }
 
+
+void evaluateSheenIBL(const PixelParams pixel, float diffuseAO,
+        const in SSAOInterpolationCache cache, inout vec3 Fd, inout vec3 Fr) 
+{
+    // Albedo scaling of the base layer before we layer sheen on top
+    Fd *= pixel.sheenScaling;
+    Fr *= pixel.sheenScaling;
+    vec3 reflectance = pixel.sheenDFG * pixel.sheenColor;
+    reflectance *= specularAO(shading_NoV, diffuseAO, pixel.sheenRoughness, cache);
+    Fr += reflectance * prefilteredRadiance(shading_reflected, pixel.sheenPerceptualRoughness);
+
+}
+
+
+void evaluateClearCoatIBL(const PixelParams pixel, float diffuseAO,
+        const in SSAOInterpolationCache cache, inout vec3 Fd, inout vec3 Fr) 
+{
+
+    if (pixel.clearCoat > 0.0) 
+    {
+
+        float clearCoatNoV = shading_NoV;
+        vec3 clearCoatR = shading_reflected;
+        // The clear coat layer assumes an IOR of 1.5 (4% reflectance)
+        float Fc = F_Schlick(0.04, 1.0, clearCoatNoV) * pixel.clearCoat;
+        float attenuation = 1.0 - Fc;
+        Fd *= attenuation;
+        Fr *= attenuation;
+
+        // TODO: Should we apply specularAO to the attenuation as well?
+        float specularAO = specularAO(clearCoatNoV, diffuseAO, pixel.clearCoatRoughness, cache);
+        Fr += prefilteredRadiance(clearCoatR, pixel.clearCoatPerceptualRoughness) * (specularAO * Fc);
+    }
+
+}
+
 void evaluateIBL(const MaterialInputs material, const PixelParams pixel, inout vec3 color) 
 {
+
+    SSAOInterpolationCache interpolationCache;
+
+
     // specular layer
     vec3 Fr = vec3(0.0);
     const vec4 ssrFr = vec4(0.0);
@@ -445,6 +678,12 @@ void evaluateIBL(const MaterialInputs material, const PixelParams pixel, inout v
     diffuseIrradiance = Irradiance_SphericalHarmonics(diffuseNormal);
     vec3 Fd = pixel.diffuseColor * diffuseIrradiance * (1.0 - E) * diffuseBRDF;
     //Fd = diffuseIrradiance;
+
+     // sheen layer
+    evaluateSheenIBL(pixel, diffuseAO, interpolationCache, Fd, Fr);
+    // clear coat layer
+    evaluateClearCoatIBL(pixel, diffuseAO, interpolationCache, Fd, Fr);
+
 
     Fr *= iblLuminance;
     Fd *= iblLuminance;
@@ -503,6 +742,10 @@ void main()
     inputs.reflectance = reflectance; 
     inputs.emissive = emissive;
     inputs.ambientOcclusion = ambientOcclusion;
+    inputs.sheenColor = material_sheenColor;
+    inputs.sheenRoughness = material_sheenRoughness;
+    inputs.clearCoat = material_clearCoat;
+    inputs.clearCoatRoughness = material_clearCoatRoughness;
 
     computeShadingParams();
     prepareMaterial(inputs);

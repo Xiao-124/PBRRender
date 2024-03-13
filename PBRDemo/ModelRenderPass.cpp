@@ -109,6 +109,12 @@ void CModelRenderPass::updateV()
 	m_pShader->setFloatUniformValue("emissive", material.emissive.r, material.emissive.g, material.emissive.b, material.emissive.a);
 	m_pShader->setFloatUniformValue("ambientOcclusion", material.ambientOcclusion);
 	
+	m_pShader->setFloatUniformValue("material_sheenColor", material.sheenColor.r, material.sheenColor.g, material.sheenColor.b);
+	m_pShader->setFloatUniformValue("material_sheenRoughness", material.sheenRoughness);
+	m_pShader->setFloatUniformValue("material_clearCoat", material.clearCoat);
+	m_pShader->setFloatUniformValue("material_clearCoatRoughness", material.clearCoatRoughness);
+
+
 	
 	auto irradianceMap = ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("irradianceMap");
 	auto prefilterMap = ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("prefilterMap");
