@@ -25,20 +25,16 @@ CModelRenderPass::~CModelRenderPass()
 void CModelRenderPass::initV()
 {
 	m_FBO = ElayGraphics::ResourceManager::getSharedDataByName<GLuint>("mFBO");
-	m_pShader = std::make_shared<CShader>("ModelRender_VS.glsl", "ModelRender_FS.glsl");
+	//m_pShader = std::make_shared<CShader>("ModelRender_VS.glsl", "ModelRender_FS.glsl");
+
+	standardModelShader = std::make_shared<CShader>("ShadingModelStandard_VS.glsl", "ShadingModelStandard_FS.glsl");
+	clothModelShader = std::make_shared<CShader>("ShadingModelCloth_VS.glsl", "ShadingModelCloth_FS.glsl");
+	subsurafceModelShader = std::make_shared<CShader>("ShadingModelSubSurface_VS.glsl", "ShadingModelSubSurface_FS.glsl");
+
 	m_pMonkey = std::dynamic_pointer_cast<CModelLoad>(ElayGraphics::ResourceManager::getGameObjectByName("Monkey"));
-
-	m_pShader->activeShader();
-	//app.transform = mat4f{ mat3f(1), float3(0, 0, -4) } *tcm.getWorldTransform(ti);
-
-	glm::mat4 modelMatrix(1);
-	//modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, -4.0f));
-	m_pShader->setMat4UniformValue("u_ModelMatrix", glm::value_ptr(modelMatrix));
-	m_pMonkey->initModel(*m_pShader);
 	glm::vec3 center = m_pMonkey->getAABB()->getCentre();
 	ElayGraphics::Camera::setMainCameraFocalPos(glm::dvec3(center.x, center.y, center.z));
 
-	
 	auto groundShader = std::make_shared<CShader>("GroundShadow_VS.glsl", "GroundShadow_FS.glsl");
 	ElayGraphics::ResourceManager::registerSharedData("GroundShader", groundShader);
 
@@ -46,7 +42,6 @@ void CModelRenderPass::initV()
 
 void CModelRenderPass::updateV()
 {
-
 	auto albeo = ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("TextureConfig4Albedo");
 	glViewport( 0, 0,  albeo->Width, albeo->Height);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
@@ -56,14 +51,6 @@ void CModelRenderPass::updateV()
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-
-	m_pShader->activeShader();
-	glm::dvec3 cameraPos = ElayGraphics::Camera::getMainCameraPos();
-	m_pShader->setFloatUniformValue("cameraPos",  cameraPos.x, cameraPos.y, cameraPos.z);
-
-	
-	modelMatrix *= ElayGraphics::Camera::getMainCameraModelMatrix();
-	m_pShader->setMat4UniformValue("u_ModelMatrix", glm::value_ptr(modelMatrix));
 
 	auto material = ElayGraphics::ResourceManager::getSharedDataByName<MaterialSettings>("MaterialSettings");
 	auto light = ElayGraphics::ResourceManager::getSharedDataByName<LightSettings>("LightSettings");
@@ -93,12 +80,34 @@ void CModelRenderPass::updateV()
 
 	glm::vec3 lightColor = light.sunLight.sunlightColor;
 	float lightIdentity = light.sunLight.sunlightIntensity * exposure;
+
+	glm::dvec3 cameraPos = ElayGraphics::Camera::getMainCameraPos();
+	float iblIntensity = light.iblIntensity;
+	iblIntensity *= exposure;
+
+	if (material.materialType == 0)
+	{
+		m_pShader = standardModelShader;
+	}
+	else if (material.materialType == 1)
+	{
+		m_pShader = clothModelShader;
+	}
+	else if (material.materialType == 2)
+	{
+		m_pShader = subsurafceModelShader;
+	}
+
+	m_pShader->activeShader();	
+	m_pShader->setFloatUniformValue("cameraPos",  cameraPos.x, cameraPos.y, cameraPos.z);
+	m_pShader->setMat4UniformValue("u_ModelMatrix", glm::value_ptr(glm::mat4(1.0f)));
+
+	
 	m_pShader->setFloatUniformValue("lightDirection", lightDir.x, lightDir.y, lightDir.z);
 	m_pShader->setFloatUniformValue("sun", sun.x, sun.y, sun.z, sun.w);
 	m_pShader->setFloatUniformValue("lightColor", lightColor.x, lightColor.y, lightColor.z, lightIdentity);
 	
-	float iblIntensity = light.iblIntensity;
-	iblIntensity *= exposure;
+	
 	m_pShader->setFloatUniformValue("iblLuminance", iblIntensity);
 
 	LinearColorA mcolor = Color::toLinear<ACCURATE>(sRGBColorA(material.baseColor.r, material.baseColor.g, material.baseColor.b, material.baseColor.a));
@@ -113,6 +122,13 @@ void CModelRenderPass::updateV()
 	m_pShader->setFloatUniformValue("material_sheenRoughness", material.sheenRoughness);
 	m_pShader->setFloatUniformValue("material_clearCoat", material.clearCoat);
 	m_pShader->setFloatUniformValue("material_clearCoatRoughness", material.clearCoatRoughness);
+	m_pShader->setFloatUniformValue("material_anisotropyDirection", material.anisotropyDirection.x, material.anisotropyDirection.y, material.anisotropyDirection.z);
+	m_pShader->setFloatUniformValue("material_anisotropy", material.anisotropy);
+	m_pShader->setFloatUniformValue("material_subsurfaceColor", material.subSurfaceColor.r, material.subSurfaceColor.g, material.subSurfaceColor.b);
+	
+	m_pShader->setFloatUniformValue("material_thickness", material.thickness);
+	m_pShader->setFloatUniformValue("material_subsurfacePower", material.subsurfacePower);
+
 
 
 	
@@ -126,15 +142,6 @@ void CModelRenderPass::updateV()
 	m_pShader->setTextureUniformValue("environmentCubeMap", envCubemap);
 
 	std::vector<glm::vec3> frame_iblSH = ElayGraphics::ResourceManager::getSharedDataByName<std::vector<glm::vec3>>("iblSH");
-	//frame_iblSH[0] = glm::vec3(0.7857);
-	//frame_iblSH[1] = glm::vec3(0.4025);
-	//frame_iblSH[2] = glm::vec3(0.4605);
-	//frame_iblSH[3] = glm::vec3(0.08418);
-	//frame_iblSH[4] = glm::vec3(0.05834);
-	//frame_iblSH[5] = glm::vec3(0.2049);
-	//frame_iblSH[6] = glm::vec3(0.09273);
-	//frame_iblSH[7] = glm::vec3(-0.0918);
-	//frame_iblSH[8] = glm::vec3(-0.0067);	
 	for (int i = 0; i < 9; i++)
 	{
 		std::string name = "frame_iblSH[" + std::to_string(i) + "]";

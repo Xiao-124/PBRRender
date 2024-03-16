@@ -192,9 +192,19 @@ bool IGUI::sliderFloat(const std::string& vLable, float* v, float v_min, float v
 	return ImGui::SliderFloat(vLable.c_str(), v, v_min, v_max);
 }
 
+bool IGUI::sliderFloat3(const std::string& label, glm::vec3& v, float v_min, float v_max)
+{
+	return ImGui::SliderFloat3(label.c_str(), &v[0], v_min, v_max);
+}
+
 bool IGUI::sliderAngle(const std::string& vLable, float* v_rad, float v_degrees_min, float v_degrees_max)
 {
 	return ImGui::SliderAngle(vLable.c_str(), v_rad, v_degrees_min, v_degrees_max);
+}
+
+bool IGUI::sliderInt(const std::string& label, int* v, int v_min, int v_max)
+{
+	return ImGui::SliderInt(label.c_str(), v, v_min, v_max);
 }
 
 bool IGUI::directionWidget(const std::string& vLable, float v[3])
@@ -221,6 +231,11 @@ void IGUI::horizontalLine()
 void IGUI::sameLine()
 {
 	ImGui::SameLine();
+}
+
+void IGUI::sameLine(float s, float e)
+{
+	ImGui::SameLine(s, e);
 }
 
 //************************************************************************************
@@ -559,4 +574,27 @@ void IGUI::pushStyleColor(ElayGraphics::EGUIItemColor vItemColor, const glm::vec
 void IGUI::popStyleColor(int vPopCount/* = 1*/)
 {
 	ImGui::PopStyleColor(vPopCount);
+}
+
+bool IGUI::vSliderFloat(const std::string& label, glm::vec2& size, float* v, float v_min, float v_max, const char* format, float power)
+{
+	return ImGui::VSliderFloat(label.c_str(), ImVec2(size.x, size.y), v, v_min, v_max, format, power);
+}
+
+bool IGUI::isItemActive()
+{
+	return ImGui::IsItemActive();
+}
+
+bool IGUI::isItemHovered()
+{
+	return ImGui::IsItemHovered();
+}
+
+void IGUI::setTooltip(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	ImGui::SetTooltipV(fmt, args);
+	va_end(args);
 }

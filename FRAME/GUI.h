@@ -51,13 +51,17 @@ public:
 	bool sliderScalarN(const std::string& vLable, ElayGraphics::EDataType vDataType, int vComponentsNum, void* vValue, const void* vMin, const void* vMax);
 	bool sliderFloat4(const std::string& vLable, glm::vec4& vioValue, float vMin, float vMax);
 	bool sliderFloat(const std::string& label, float* v, float v_min, float v_max);
+	bool sliderFloat3(const std::string& label, glm::vec3& v, float v_min, float v_max);
+
 	bool sliderAngle(const std::string& label, float* v_rad, float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
+	bool sliderInt(const std::string& label, int* v, int v_min, int v_max);
 
 	bool directionWidget(const std::string& label, float v[3]);
 
 	bool verticalSilderScalar(const std::string& vLable, const glm::vec2& vSliderSize, ElayGraphics::EDataType vDataType, void* vValue, const void* vMin, const void* vMax);	//return true when value changed
 	void horizontalLine();
 	void sameLine();
+	void sameLine(float s, float e);
 	bool button(const std::string& vLable, const glm::vec2& vSize = glm::vec2(0));
 	bool colorButton(const std::string& vLable, const glm::vec4& vColor, const glm::vec2& vSize = glm::vec2(0));
 	void setColorPickerType(int vPickerType);	//0: Bar, !0: Wheel
@@ -105,6 +109,11 @@ public:
 	void pushStyleColor(ElayGraphics::EGUIItemColor vItemColor, const glm::vec4& vColor);
 	void popStyleColor(int vPopCount = 1);
 
+
+	bool vSliderFloat(const std::string& label, glm::vec2& size, float* v, float v_min, float v_max, const char* format, float power = 1.0);
+	bool isItemActive();
+	bool isItemHovered();
+	void setTooltip(const char* fmt, ...);
 private:
 	int					 m_ExecutionOrder = -1;
 	std::string			 m_Name;

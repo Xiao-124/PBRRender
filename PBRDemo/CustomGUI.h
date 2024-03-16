@@ -2,8 +2,8 @@
 #include "GUI.h"
 #include <GLM/glm.hpp>
 #include "Light.h"
-
-
+#include "ColorGradingPass.h"
+#include <vector>
 
 struct SunLightSetting
 {
@@ -47,6 +47,8 @@ struct CameraSetting
 
 struct MaterialSettings
 {
+    int materialType = 0;
+
     glm::vec4 baseColor = glm::vec4(0.8, 0.8, 0.8, 1.0);
     float metallic = 1.0;
     float roughness = 0.4;
@@ -58,7 +60,19 @@ struct MaterialSettings
     float sheenRoughness = 0;
     float clearCoat = 0;
     float clearCoatRoughness = 0;
+
+    
+    float anisotropy = 0;
+    glm::vec3  anisotropyDirection = { 1,0,0 };
+
+    float thickness = 0;
+    float subsurfacePower = 0;
+    glm::vec4 subSurfaceColor = glm::vec4(0, 0, 0, 0);
+
+
+
 };
+
 
 class CCustomGUI : public IGUI
 {
@@ -69,6 +83,13 @@ public:
 	virtual void initV() override;
 	virtual void updateV() override;
 
+
+    void pushSliderColors(float hue);
+    void tooltipFloat(float value);
+    void popSliderColors();
+    void rangePlotSeriesStart(int series);
+    void rangePlotSeriesEnd(int series);
+    void colorGradingUI(ColorGradingSettings& colorGrading, std::vector<float>& rangePlot, std::vector<float>& curvePlot, std::vector<float>& toneMapPlot);
 private:
 	glm::vec3 m_LightPos = glm::vec3(0, 1, 0);	//30, 308, -130
 	glm::vec3 m_LightDir = glm::normalize(glm::vec3(-0.3, -1, 0));
@@ -77,4 +98,9 @@ private:
     LightSettings light;
     MaterialSettings material;
     CameraSetting cameraSetting;
+
+    ColorGradingSettings colorGradingSetting;
+    std::vector<float> mToneMapPlot;
+    std::vector<float> mRangePlot;
+    std::vector<float> mCurvePlot;
 };

@@ -7,8 +7,29 @@
 #include <GLM/glm.hpp>
 #include "ColorSpace.h"
 #include "RenderPass.h"
+#include "ToneMapper.h"
+//class ToneMapper;
 
-class ToneMapper;
+
+struct AgxToneMapperSettings
+{
+    AgxToneMapper::AgxLook look = AgxToneMapper::AgxLook::NONE;
+    bool operator!=(const AgxToneMapperSettings& rhs) const { return !(rhs == *this); }
+    bool operator==(const AgxToneMapperSettings& rhs) const;
+};
+
+struct GenericToneMapperSettings
+{
+    float contrast = 1.55f;
+    float midGrayIn = 0.18f;
+    float midGrayOut = 0.215f;
+    float hdrMax = 10.0f;
+    bool operator!=(const GenericToneMapperSettings& rhs) const { return !(rhs == *this); }
+    bool operator==(const GenericToneMapperSettings& rhs) const;
+};
+
+
+
 class CColorGradingPass : public IRenderPass
 {
 public:
@@ -34,13 +55,25 @@ public:
         *
         * @deprecated Use Builder::toneMapper(ToneMapper*) instead
         */
+    /*
+    LINEAR = 0,
+    ACES_LEGACY = 1,
+    ACES = 2,
+    FILMIC = 3,
+    AGX = 4,
+    GENERIC = 5,
+    DISPLAY_RANGE = 6,
+    */
     enum class ToneMapping : uint8_t 
     {
         LINEAR = 0,     //!< Linear tone mapping (i.e. no tone mapping)
         ACES_LEGACY = 1,     //!< ACES tone mapping, with a brightness modifier to match Filament's legacy tone mapper
         ACES = 2,     //!< ACES tone mapping
         FILMIC = 3,     //!< Filmic tone mapping, modelled after ACES but applied in sRGB space
-        DISPLAY_RANGE = 4,     //!< Tone mapping used to validate/debug scene exposure
+        AGX = 4,
+        GENERIC = 5,
+        DISPLAY_RANGE = 6,     //!< Tone mapping used to validate/debug scene exposure
+
     };
 
     void setQuality(QualityLevel qualityLevel) noexcept;
@@ -70,7 +103,8 @@ public:
 
 private:
     const ToneMapper* toneMapper = nullptr;
-
+    AgxToneMapperSettings agxToneMapperSetting;
+    GenericToneMapperSettings genericToneMapperSetting;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     ToneMapping toneMapping = ToneMapping::ACES_LEGACY;
@@ -123,3 +157,55 @@ protected:
 };
 
 
+
+
+enum class ToneMappingSeeting : uint8_t
+{
+    LINEAR = 0,
+    ACES_LEGACY = 1,
+    ACES = 2,
+    FILMIC = 3,
+    AGX = 4,
+    GENERIC = 5,
+    DISPLAY_RANGE = 6,
+};
+
+
+
+struct ColorGradingSettings
+{
+    // fields are ordered to avoid padding
+    bool enabled = true;
+    bool linkedCurves = false;
+    bool luminanceScaling = false;
+    bool gamutMapping = false;
+    CColorGradingPass::QualityLevel quality = CColorGradingPass::QualityLevel::MEDIUM;
+    ToneMappingSeeting toneMapping = ToneMappingSeeting::ACES_LEGACY;
+    bool padding0{};
+    AgxToneMapperSettings agxToneMapper;
+    ColorSpace colorspace = Rec709 - sRGB - D65;
+    GenericToneMapperSettings genericToneMapper;
+    glm::vec4 shadows{ 1.0f, 1.0f, 1.0f, 0.0f };
+    glm::vec4 midtones{ 1.0f, 1.0f, 1.0f, 0.0f };
+    glm::vec4 highlights{ 1.0f, 1.0f, 1.0f, 0.0f };
+    glm::vec4 ranges{ 0.0f, 0.333f, 0.550f, 1.0f };
+    glm::vec3 outRed{ 1.0f, 0.0f, 0.0f };
+    glm::vec3 outGreen{ 0.0f, 1.0f, 0.0f };
+    glm::vec3 outBlue{ 0.0f, 0.0f, 1.0f };
+    glm::vec3 slope{ 1.0f };
+    glm::vec3 offset{ 0.0f };
+    glm::vec3 power{ 1.0f };
+    glm::vec3 gamma{ 1.0f };
+    glm::vec3 midPoint{ 1.0f };
+    glm::vec3 scale{ 1.0f };
+    float exposure = 0.0f;
+    float nightAdaptation = 0.0f;
+    float temperature = 0.0f;
+    float tint = 0.0f;
+    float contrast = 1.0f;
+    float vibrance = 1.0f;
+    float saturation = 1.0f;
+
+    bool operator!=(const ColorGradingSettings& rhs) const { return !(rhs == *this); }
+    bool operator==(const ColorGradingSettings& rhs) const;
+};

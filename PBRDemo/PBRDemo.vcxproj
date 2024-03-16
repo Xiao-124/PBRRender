@@ -200,10 +200,14 @@
     <None Include="IrradianceConvolution_VS.glsl" />
     <None Include="KernelFilter_FS.glsl" />
     <None Include="KernelFilter_VS.glsl" />
-    <None Include="ModelRender_FS.glsl" />
-    <None Include="ModelRender_VS.glsl" />
+    <None Include="ShadingModelStandard_FS.glsl" />
+    <None Include="ShadingModelStandard_VS.glsl" />
     <None Include="PrefilterIBL_FS.glsl" />
     <None Include="PrefilterIBL_VS.glsl" />
+    <None Include="ShadingModelCloth_FS.glsl" />
+    <None Include="ShadingModelCloth_VS.glsl" />
+    <None Include="ShadingModelSubSurface_FS.glsl" />
+    <None Include="ShadingModelSubSurface_VS.glsl" />
     <None Include="ShadowMap_FS.glsl" />
     <None Include="ShadowMap_VS.glsl" />
     <None Include="SkyBox_FS.glsl" />

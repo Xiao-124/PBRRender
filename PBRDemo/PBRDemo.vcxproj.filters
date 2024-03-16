@@ -166,10 +166,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ModelRender_FS.glsl">
+    <None Include="ShadingModelStandard_FS.glsl">
       <Filter>Shader</Filter>
     </None>
-    <None Include="ModelRender_VS.glsl">
+    <None Include="ShadingModelStandard_VS.glsl">
       <Filter>Shader</Filter>
     </None>
     <None Include="ColorGrading_VS.glsl">
@@ -251,6 +251,18 @@
       <Filter>Shader</Filter>
     </None>
     <None Include="SSAO_FS.glsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="ShadingModelCloth_VS.glsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="ShadingModelCloth_FS.glsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="ShadingModelSubSurface_VS.glsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="ShadingModelSubSurface_FS.glsl">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>

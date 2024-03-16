@@ -10,6 +10,72 @@
 #include "Common.h"
 #include "Interface.h"
 #include "Shader.h"
+//#include "CustomGUI.h"
+
+bool GenericToneMapperSettings::operator==(const GenericToneMapperSettings& rhs) const
+{
+    static_assert(sizeof(GenericToneMapperSettings) == 16, "Please update Settings.cpp");
+    return contrast == rhs.contrast &&
+        midGrayIn == rhs.midGrayIn &&
+        midGrayOut == rhs.midGrayOut &&
+        hdrMax == rhs.hdrMax;
+}
+
+bool AgxToneMapperSettings::operator==(const AgxToneMapperSettings& rhs) const
+{
+    static_assert(sizeof(AgxToneMapperSettings) == 1, "Please update Settings.cpp");
+    return look == rhs.look;
+}
+
+bool ColorGradingSettings::operator==(const ColorGradingSettings& rhs) const
+{
+    // If you had to fix the following codeline, then you likely also need to update the
+    // implementation of operator==.
+    static_assert(sizeof(ColorGradingSettings) == 312, "Please update Settings.cpp");
+    return enabled == rhs.enabled &&
+        colorspace == rhs.colorspace &&
+        quality == rhs.quality &&
+        toneMapping == rhs.toneMapping &&
+        genericToneMapper == rhs.genericToneMapper &&
+        agxToneMapper == rhs.agxToneMapper &&
+        luminanceScaling == rhs.luminanceScaling &&
+        gamutMapping == rhs.gamutMapping &&
+        exposure == rhs.exposure &&
+        nightAdaptation == rhs.nightAdaptation &&
+        temperature == rhs.temperature &&
+        tint == rhs.tint &&
+        outRed == rhs.outRed &&
+        outGreen == rhs.outGreen &&
+        outBlue == rhs.outBlue &&
+        shadows == rhs.shadows &&
+        midtones == rhs.midtones &&
+        highlights == rhs.highlights &&
+        ranges == rhs.ranges &&
+        contrast == rhs.contrast &&
+        vibrance == rhs.vibrance &&
+        saturation == rhs.saturation &&
+        slope == rhs.slope &&
+        offset == rhs.offset &&
+        power == rhs.power &&
+        gamma == rhs.gamma &&
+        midPoint == rhs.midPoint &&
+        linkedCurves == rhs.linkedCurves &&
+        scale == rhs.scale;
+}
+
+
+glm::mat3 vec3ToMat3(glm::vec3 v)
+{
+    glm::mat3 m =
+    {
+        v.x, 0.0f, 0.0f,
+        0.0f, v.y, 0.0f,
+        0.0f, 0.0f, v.z
+    };
+    return m;
+}
+
+
 void CColorGradingPass::setQuality(CColorGradingPass::QualityLevel qualityLevel) noexcept
 {
     switch (qualityLevel) {
@@ -207,11 +273,27 @@ glm::vec3 scotopicAdaptation(glm::vec3 v, float nightAdaptation) noexcept
     // Weighted cone response as described in Cao et al., section 3.3
     // The approximately linear relation defined in the paper is represented here
     // in matrix form to simplify the code
+
+
     glm::mat3 weightedRodResponse = (K_ / S_) * glm::mat3{
         -(k3 + rw),       p * k3,          p * S_,
         1.0f + k3 * rw, (1.0f - p) * k3, (1.0f - p) * S_,
         0.0f,            1.0f,            0.0f
-    } *glm::mat3{ k,k,k } *glm::inverse(glm::mat3{ m,m,m });
+    } 
+    *glm::mat3
+    {
+        k[0], 0,    0,
+        0,    k[1], 0,
+        0.0f, 0,    k[2]
+    } 
+    *glm::inverse(
+        glm::mat3
+        {
+            m[0], 0,    0,
+            0,    m[1], 0,
+            0.0f, 0,    m[2]
+        }
+    );
 
 
     // Move to log-luminance, or the EV values as measured by a Minolta Spotmeter F.
@@ -255,7 +337,7 @@ glm::mat3 adaptationTransform(glm::vec2 whiteBalance) noexcept
     float y = chromaticityCoordinateIlluminantD(x) + t * 0.066f;
 
     glm::vec3 lms = XYZ_to_CIECAT16 * xyY_to_XYZ({ x, y, 1.0f });
-    return LMS_CAT16_to_Rec2020 * glm::mat3{ ILLUMINANT_D65_LMS_CAT16 / lms, ILLUMINANT_D65_LMS_CAT16 / lms,ILLUMINANT_D65_LMS_CAT16 / lms } *Rec2020_to_LMS_CAT16;
+    return LMS_CAT16_to_Rec2020 * vec3ToMat3( ILLUMINANT_D65_LMS_CAT16 / lms) *Rec2020_to_LMS_CAT16;
 }
 
 
@@ -277,7 +359,7 @@ inline constexpr glm::vec3 channelMixer(glm::vec3 v, glm::vec3 r, glm::vec3 g, g
 }
 
 
-inline glm::vec3 tonalRanges(
+inline glm::vec3 tonalRangesFunc(
         glm::vec3 v, glm::vec3 luminance,
         glm::vec3 shadows, glm::vec3 midtones, glm::vec3 highlights,
         glm::vec4 ranges
@@ -312,21 +394,21 @@ inline glm::vec3 colorDecisionList(glm::vec3 v, glm::vec3 slope, glm::vec3 offse
 }
 
 
-inline glm::vec3 contrast(glm::vec3 v, float contrast) 
+inline glm::vec3 contrastFunc(glm::vec3 v, float contrast) 
 {
     // Matches contrast as applied in DaVinci Resolve
     return MIDDLE_GRAY_ACEScct + contrast * (v - MIDDLE_GRAY_ACEScct);
 }
 
 
-inline glm::vec3 saturation(glm::vec3 v, glm::vec3 luminance, float saturation) 
+inline glm::vec3 saturationFunc(glm::vec3 v, glm::vec3 luminance, float saturation) 
 {
     const glm::vec3 y = glm::vec3(glm::dot(v, luminance));
     return y + saturation * (v - y);
 }
 
 
-inline glm::vec3 vibrance(glm::vec3 v, glm::vec3 luminance, float vibrance) 
+inline glm::vec3 vibranceFunc(glm::vec3 v, glm::vec3 luminance, float vibrance) 
 {
     float r = v.r - glm::max(v.g, v.b);
     float s = (vibrance - 1.0f) / (1.0f + std::exp(-r * 3.0f)) + 1.0f;
@@ -357,35 +439,35 @@ inline glm::vec3 curves(glm::vec3 v, glm::vec3 shadowGamma, glm::vec3 midPoint, 
 // Luminance scaling
 //------------------------------------------------------------------------------
 
-//static glm::vec3 luminanceScaling(glm::vec3 x,
-//    const ToneMapper& toneMapper, glm::vec3 luminanceWeights) noexcept 
-//{
-//
-//    // Troy Sobotka, 2021, "EVILS - Exposure Value Invariant Luminance Scaling"
-//    // https://colab.research.google.com/drive/1iPJzNNKR7PynFmsqSnQm3bCZmQ3CvAJ-#scrollTo=psU43hb-BLzB
-//
-//    float luminanceIn = dot(x, luminanceWeights);
-//
-//    // TODO: We could optimize for the case of single-channel luminance
-//    float luminanceOut = toneMapper(luminanceIn).y;
-//
-//    float peak = max(x);
-//    glm::vec3 chromaRatio = max(x / peak, 0.0f);
-//
-//    float chromaRatioLuminance = dot(chromaRatio, luminanceWeights);
-//
-//    glm::vec3 maxReserves = 1.0f - chromaRatio;
-//    float maxReservesLuminance = dot(maxReserves, luminanceWeights);
-//
-//    float luminanceDifference = std::max(luminanceOut - chromaRatioLuminance, 0.0f);
-//    float scaledLuminanceDifference =
-//        luminanceDifference / std::max(maxReservesLuminance, std::numeric_limits<float>::min());
-//
-//    float chromaScale = (luminanceOut - luminanceDifference) /
-//        std::max(chromaRatioLuminance, std::numeric_limits<float>::min());
-//
-//    return chromaScale * chromaRatio + scaledLuminanceDifference * maxReserves;
-//}
+static glm::vec3 luminanceScalingFunc(glm::vec3 x,
+    const ToneMapper& toneMapper, glm::vec3 luminanceWeights) noexcept 
+{
+
+    // Troy Sobotka, 2021, "EVILS - Exposure Value Invariant Luminance Scaling"
+    // https://colab.research.google.com/drive/1iPJzNNKR7PynFmsqSnQm3bCZmQ3CvAJ-#scrollTo=psU43hb-BLzB
+
+    float luminanceIn = dot(x, luminanceWeights);
+
+    // TODO: We could optimize for the case of single-channel luminance
+    float luminanceOut = toneMapper(glm::vec3(luminanceIn)).y;
+
+    float peak = max(x);
+    glm::vec3 chromaRatio = max(x / peak, 0.0f);
+
+    float chromaRatioLuminance = dot(chromaRatio, luminanceWeights);
+
+    glm::vec3 maxReserves = 1.0f - chromaRatio;
+    float maxReservesLuminance = dot(maxReserves, luminanceWeights);
+
+    float luminanceDifference = std::max(luminanceOut - chromaRatioLuminance, 0.0f);
+    float scaledLuminanceDifference =
+        luminanceDifference / std::max(maxReservesLuminance, std::numeric_limits<float>::min());
+
+    float chromaScale = (luminanceOut - luminanceDifference) /
+        std::max(chromaRatioLuminance, std::numeric_limits<float>::min());
+
+    return chromaScale * chromaRatio + scaledLuminanceDifference * maxReserves;
+}
 
 //------------------------------------------------------------------------------
 // Quality
@@ -473,7 +555,6 @@ CColorGradingPass::CColorGradingPass(const std::string& vPassName, int vExcution
 }
 
 
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 void CColorGradingPass::initV()
@@ -493,6 +574,17 @@ void CColorGradingPass::initV()
             break;
         case ToneMapping::ACES:
             this->toneMapper = new ACESToneMapper();
+            break;
+        case ToneMapping::AGX:
+            this->toneMapper = new AgxToneMapper(agxToneMapperSetting.look);
+            break;
+        case ToneMapping::GENERIC:
+            this->toneMapper = new GenericToneMapper(
+                genericToneMapperSetting.contrast,
+                genericToneMapperSetting.midGrayIn,
+                genericToneMapperSetting.midGrayOut,
+                genericToneMapperSetting.hdrMax
+            );
             break;
         case ToneMapping::FILMIC:
             this->toneMapper = new FilmicToneMapper();
@@ -554,7 +646,67 @@ void CColorGradingPass::initV()
                         // Kill negative values near 0.0f due to imprecision in the log conversion
                         v = max(v, 0.0f);
 
+                        if (this->hasAdjustments) 
+                        {
+                            // Exposure
+                            v = adjustExposure(v, this->exposure);
+                            // Purkinje shift ("low-light" vision)
+                            v = scotopicAdaptation(v, this->nightAdaptation);
+                        }
+
+
                         v = c.colorGradingIn * v;
+
+                        if (this->hasAdjustments)
+                        {
+                            // White balance
+                            v = chromaticAdaptation(v, config.adaptationTransform);
+
+                            // Kill negative values before the next transforms
+                            v = max(v, 0.0f);
+
+                            // Channel mixer
+                            v = channelMixer(v, this->outRed, this->outGreen, this->outBlue);
+
+                            // Shadows/mid-tones/highlights
+                            v = tonalRangesFunc(v, c.colorGradingLuminance,
+                                this->shadows, this->midtones, this->highlights,
+                                this->tonalRanges);
+
+                            // The adjustments below behave better in log space
+                            v = linear_to_LogC(v);
+
+                            // ASC CDL
+                            v = colorDecisionList(v, this->slope, this->offset, this->power);
+
+                            // Contrast in log space
+                            v = contrastFunc(v, this->contrast);
+
+                            // Back to linear space
+                            v = LogC_to_linear(v);
+
+                            // Vibrance in linear space
+                            v = vibranceFunc(v, c.colorGradingLuminance, this->vibrance);
+
+                            // Saturation in linear space
+                            v = saturationFunc(v, c.colorGradingLuminance, this->saturation);
+
+                            // Kill negative values before curves
+                            v = max(v, 0.0f);
+
+                            // RGB curves
+                            v = curves(v,
+                                this->shadowGamma, this->midPoint, this->highlightScale);
+                        }
+
+                        if (this->luminanceScaling) 
+                        {
+                            v = luminanceScalingFunc(v, *this->toneMapper, c.colorGradingLuminance);
+                        }
+                        else 
+                        {
+                            v = (*this->toneMapper)(v);
+                        }
                         v = (*this->toneMapper)(v);
                         // Apply gamut mapping
                         if (this->gamutMapping)
@@ -626,7 +778,11 @@ void CColorGradingPass::initV()
     mLutHandle->BorderColor = { 0,0,0,0 };
     genTexture(mLutHandle);
     free(data);
+
+
     ElayGraphics::ResourceManager::registerSharedData("ColorGradingTexture", mLutHandle);
+    ElayGraphics::ResourceManager::registerSharedData("mLutHandle", mLutHandle);
+
 
     if (needToneMapper)
     {
@@ -634,24 +790,298 @@ void CColorGradingPass::initV()
         this->toneMapper = nullptr;
     }
    
-
     m_pShader = std::make_shared<CShader>("ColorGrading_VS.glsl", "ColorGrading_FS.glsl");
-    m_pShader->activeShader();
-    std::shared_ptr<ElayGraphics::STexture> ComputeTexture = (ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("TextureConfig4Albedo"));
-    m_pShader->setTextureUniformValue("u_Texture2D", ComputeTexture);
-
-    m_pShader->setTextureUniformValue("u_Grading3D", mLutHandle);
+    
 
 }
 
+
+ColorGradingSettings currentColorGradingSetting;
 void CColorGradingPass::updateV()
 {
+    auto setting = ElayGraphics::ResourceManager::getSharedDataByName<ColorGradingSettings>("ColorGradingSetting");
+    if (setting != currentColorGradingSetting)
+    {
+        this->hasAdjustments = true;
+   
+
+        this->exposure = setting.exposure;
+        this->nightAdaptation = setting.nightAdaptation;
+
+        
+        this->midPoint = setting.midPoint;
+        this->outputColorSpace = setting.colorspace;
+        this->outBlue = setting.outBlue;
+        this->outGreen = setting.outGreen;
+        this->outRed = setting.outRed;
+        
+        
+        //this->linkedCurves = setting.linkedCurves;
+        this->luminanceScaling = setting.luminanceScaling;
+        
+        this->shadows = setting.shadows;
+        this->midtones = setting.midtones;
+        this->highlights = setting.highlights;
+        this->tonalRanges = setting.ranges;
+ 
+
+        this->contrast = setting.contrast;
+        this->saturation = setting.saturation;
+        this->vibrance = setting.vibrance;
+
+
+        this->slope = setting.slope;
+        this->offset = setting.offset;
+        this->power = setting.power;
+
+        
+        this->whiteBalance.x = setting.temperature;
+        this->whiteBalance.y = setting.tint;
+
+
+        this->shadowGamma = setting.gamma;
+        this->midPoint = setting.midPoint;
+        this->highlightScale = setting.scale;
+
+        this->toneMapping = static_cast<ToneMapping>(setting.toneMapping);       
+        this->genericToneMapperSetting = setting.genericToneMapper;
+        this->agxToneMapperSetting = setting.agxToneMapper;
+        currentColorGradingSetting = setting;
+
+
+
+        // Fallback for clients that still use the deprecated ToneMapping API
+        bool needToneMapper = this->toneMapper == nullptr;
+        switch (this->toneMapping)
+        {
+        case ToneMapping::LINEAR:
+            this->toneMapper = new LinearToneMapper();
+            break;
+        case ToneMapping::ACES_LEGACY:
+            this->toneMapper = new ACESLegacyToneMapper();
+            break;
+        case ToneMapping::ACES:
+            this->toneMapper = new ACESToneMapper();
+            break;
+        case ToneMapping::AGX:
+            this->toneMapper = new AgxToneMapper(agxToneMapperSetting.look);
+            break;
+        case ToneMapping::GENERIC:
+            this->toneMapper = new GenericToneMapper(
+                genericToneMapperSetting.contrast,
+                genericToneMapperSetting.midGrayIn,
+                genericToneMapperSetting.midGrayOut,
+                genericToneMapperSetting.hdrMax
+            );
+            break;
+        case ToneMapping::FILMIC:
+            this->toneMapper = new FilmicToneMapper();
+            break;
+        case ToneMapping::DISPLAY_RANGE:
+            this->toneMapper = new DisplayRangeToneMapper();
+            break;
+        }
+
+
+        Config c;
+        std::mutex configLock;
+        {
+            std::lock_guard<std::mutex> const lock(configLock);
+            c.lutDimension = this->dimension;
+            c.adaptationTransform = adaptationTransform(this->whiteBalance);
+            c.colorGradingIn = selectColorGradingTransformIn(this->toneMapping);
+            c.colorGradingOut = selectColorGradingTransformOut(this->toneMapping);
+            c.colorGradingLuminance = selectColorGradingLuminance(this->toneMapping);
+            c.oetf = selectOETF(this->outputColorSpace);
+        }
+        size_t mDimension = c.lutDimension;
+        size_t lutElementCount = c.lutDimension * c.lutDimension * c.lutDimension;
+        size_t elementSize = sizeof(glm::half4);
+
+        void* data = malloc(lutElementCount * elementSize);
+
+        auto [textureFormat, format, type] = selectLutTextureParams(this->format);
+
+
+        void* converted = nullptr;
+        if (type == GL_UNSIGNED_INT_2_10_10_10_REV)
+        {
+            // convert input to UINT_2_10_10_10_REV if needed
+            converted = malloc(lutElementCount * sizeof(uint32_t));
+        }
+
+
+        std::vector<std::thread> js(c.lutDimension);
+        for (size_t b = 0; b < c.lutDimension; b++)
+        {
+            js[b] = std::thread(
+                [data, converted, b, &c, &configLock, this]()
+                {
+                    Config config;
+                    {
+                        std::lock_guard<std::mutex> lock(configLock);
+                        config = c;
+                    }
+                    glm::half4* p = (glm::half4*)data + b * config.lutDimension * config.lutDimension;
+                    for (size_t g = 0; g < config.lutDimension; g++) {
+                        for (size_t r = 0; r < config.lutDimension; r++) {
+                            glm::vec3 v = glm::vec3{ r, g, b } *(1.0f / float(config.lutDimension - 1u));
+
+                            // LogC encoding
+                            v = LogC_to_linear(v);
+
+                            // Kill negative values near 0.0f due to imprecision in the log conversion
+                            v = max(v, 0.0f);
+
+                            if (this->hasAdjustments)
+                            {
+                                // Exposure
+                                v = adjustExposure(v, this->exposure);
+                                // Purkinje shift ("low-light" vision)
+                                v = scotopicAdaptation(v, this->nightAdaptation);
+                            }
+
+
+                            v = c.colorGradingIn * v;
+
+                            if (this->hasAdjustments)
+                            {
+                                // White balance
+                                v = chromaticAdaptation(v, config.adaptationTransform);
+                                //
+                                // Kill negative values before the next transforms
+                                v = max(v, 0.0f);
+                            
+                                // Channel mixer
+                                v = channelMixer(v, this->outRed, this->outGreen, this->outBlue);
+                                //
+                                //// Shadows/mid-tones/highlights
+                                v = tonalRangesFunc(v, c.colorGradingLuminance,
+                                    this->shadows, this->midtones, this->highlights,
+                                    this->tonalRanges);
+                            
+                                // The adjustments below behave better in log space
+                                v = linear_to_LogC(v);
+                                
+                                // ASC CDL
+                                v = colorDecisionList(v, this->slope, this->offset, this->power);
+                                
+                                // Contrast in log space
+                                v = contrastFunc(v, this->contrast);
+                                
+                                //// Back to linear space
+                                v = LogC_to_linear(v);
+                                
+                                // Vibrance in linear space
+                                v = vibranceFunc(v, c.colorGradingLuminance, this->vibrance);
+                                //
+                                // Saturation in linear space
+                                v = saturationFunc(v, c.colorGradingLuminance, this->saturation);
+                            
+                                // Kill negative values before curves
+                                v = max(v, 0.0f);
+                                
+                                // RGB curves
+                                v = curves(v,
+                                    this->shadowGamma, this->midPoint, this->highlightScale);
+                            }
+
+                            if (this->luminanceScaling)
+                            {
+                                v = luminanceScalingFunc(v, *this->toneMapper, c.colorGradingLuminance);
+                            }
+                            else
+                            {
+                                v = (*this->toneMapper)(v);
+                            }
+                            v = (*this->toneMapper)(v);
+                            // Apply gamut mapping
+                            if (this->gamutMapping)
+                            {
+                                // TODO: This should depend on the output color space
+                                v = gamutMapping_sRGB(v);
+                            }
+
+                            // TODO: We should convert to the output color space if we use a working
+                            //       color space that's not sRGB
+                            // TODO: Allow the user to customize the output color space
+
+                            // We need to clamp for the output transfer function
+                            v = glm::saturate(v);
+
+                            // Apply OETF
+                            v = c.oetf(v);
+
+                            *p++ = glm::half4{ v, 0.0f };
+                        }
+
+                    }
+
+                    if (converted)
+                    {
+                        uint32_t* const  dst = (uint32_t*)converted +
+                            b * config.lutDimension * config.lutDimension;
+                        glm::half4* src = (glm::half4*)data +
+                            b * config.lutDimension * config.lutDimension;
+                        // we use a vectorize width of 8 because, on ARMv8 it allows the compiler to write eight
+                        // 32-bits results in one go.
+                        const size_t count = (config.lutDimension * config.lutDimension) & ~0x7u; // tell the compiler that we're a multiple of 8
+#pragma clang loop vectorize_width(8)
+                        for (size_t i = 0; i < count; ++i) {
+                            glm::vec3 v{ src[i] };
+                            uint32_t pr = uint32_t(std::floor(v.x * 1023.0f + 0.5f));
+                            uint32_t pg = uint32_t(std::floor(v.y * 1023.0f + 0.5f));
+                            uint32_t pb = uint32_t(std::floor(v.z * 1023.0f + 0.5f));
+                            dst[i] = (pb << 20u) | (pg << 10u) | pr;
+                        }
+                    }
+                }
+            );
+            js[b].join();
+        }
+
+        auto mLutHandle = std::make_shared<ElayGraphics::STexture>();
+        mLutHandle->TextureType = ElayGraphics::STexture::ETextureType::Texture3D;
+        mLutHandle->InternalFormat = textureFormat;
+        mLutHandle->ExternalFormat = format;
+        mLutHandle->DataType = type;
+        mLutHandle->Width = c.lutDimension;
+        mLutHandle->Height = c.lutDimension;
+        mLutHandle->Depth = c.lutDimension;
+
+        mLutHandle->pDataSet.resize(1);
+        mLutHandle->pDataSet[0] = data;
+
+
+
+        mLutHandle->Type4WrapS = GL_CLAMP_TO_BORDER;
+        mLutHandle->Type4WrapT = GL_CLAMP_TO_BORDER;
+        mLutHandle->BorderColor = { 0,0,0,0 };
+        genTexture(mLutHandle);
+        free(data);
+
+
+        ElayGraphics::ResourceManager::updateSharedDataByName("ColorGradingTexture", mLutHandle);
+        ElayGraphics::ResourceManager::updateSharedDataByName("mLutHandle", mLutHandle);
+
+        if (needToneMapper)
+        {
+            delete this->toneMapper;
+            this->toneMapper = nullptr;
+        }
+
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(1, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_pShader->activeShader();
     m_pShader->setFloatUniformValue("lutSize", 0.5f / this->dimension, (this->dimension - 1.0f) / this->dimension);
- 
+    std::shared_ptr<ElayGraphics::STexture> ComputeTexture = (ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("TextureConfig4Albedo"));
+    std::shared_ptr<ElayGraphics::STexture> mLutHandle = (ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("mLutHandle"));
+    m_pShader->setTextureUniformValue("u_Texture2D", ComputeTexture);
+    m_pShader->setTextureUniformValue("u_Grading3D", mLutHandle);
+
     drawQuad();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
