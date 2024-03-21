@@ -9,8 +9,21 @@
 #include <examples/imgui_impl_opengl3.h>
 #include "ImGuiExtension.h"
 #include "GLFWWindow.h"
+#include "Shlobj.h"
+#include "CommDlg.h"
+#include <Windows.h>
+#include <tchar.h>
 
 
+std::string TCHAR2STRING(TCHAR* STR)
+{
+    int iLen = WideCharToMultiByte(CP_ACP, 0, STR, -1, NULL, 0, NULL, NULL);
+    char* chRtn = new char[iLen * sizeof(char)];
+    WideCharToMultiByte(CP_ACP, 0, STR, -1, chRtn, iLen, NULL, NULL);
+    std::string str(chRtn);
+    delete chRtn;
+    return str;
+}
 
 static void computeToneMapPlot(ColorGradingSettings& settings, float* plot)
 {
@@ -391,6 +404,23 @@ void CCustomGUI::initV()
 
 void CCustomGUI::updateV()
 {
+    if (button("Open Model File"))
+    {
+        TCHAR szBuffer[MAX_PATH] = { 0 };
+        OPENFILENAME ofn = { 0 };
+        ofn.lStructSize = sizeof(ofn);
+        ofn.hwndOwner = nullptr;
+        ofn.lpstrFilter = _T("Obj文件(*.obj)\0*.obj\0所有文件(*.*)\0*.*\0");//要选择的文件后缀   
+        ofn.lpstrInitialDir = _T("D:\\Program Files");//默认的文件路径   
+        ofn.lpstrFile = szBuffer;//存放文件的缓冲区   
+        ofn.nMaxFile = sizeof(szBuffer) / sizeof(*szBuffer);
+        ofn.nFilterIndex = 0;
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER;//标志如果是多选要加上OFN_ALLOWMULTISELECT  
+        BOOL bSel = GetOpenFileName(&ofn);
+
+        std::string objFileName = TCHAR2STRING(szBuffer);
+        
+    }
     if (collapsingHeader("Light"))
     {
         indent();

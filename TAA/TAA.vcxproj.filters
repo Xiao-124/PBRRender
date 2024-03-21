@@ -27,4 +27,24 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="color.fs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="color.vs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="taa.fs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="taa.vs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="taa_color.fs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="taa_color.vs">
+      <Filter>资源文件</Filter>
+    </None>
+  </ItemGroup>
 </Project>
