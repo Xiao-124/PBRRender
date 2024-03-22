@@ -839,7 +839,7 @@ void IrradianceIBLFilter()
 void IBLLigthPass::initV()
 {
 
-    IBLPath = "D:/C++Programe/filament/third_party/environments/lightroom_14b.hdr";
+    IBLPath = "../environments/lightroom_14b.hdr";
 
 
     glEnable(GL_DEPTH_TEST);

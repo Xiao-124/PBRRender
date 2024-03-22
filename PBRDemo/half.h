@@ -176,7 +176,7 @@ namespace std
         static constexpr const bool has_infinity = true;
         static constexpr const bool has_quiet_NaN = true;
         static constexpr const bool has_signaling_NaN = false;
-        static constexpr const float_denorm_style has_denorm = denorm_absent;
+        //static constexpr const float_denorm_style has_denorm = denorm_absent;
         static constexpr const bool has_denorm_loss = true;
         static constexpr const bool is_iec559 = false;
         static constexpr const bool is_bounded = true;

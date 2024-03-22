@@ -205,9 +205,6 @@
     <None Include="DfgIBL_VS.glsl">
       <Filter>Shader</Filter>
     </None>
-    <None Include="DfgIBL_FS.glsl">
-      <Filter>Shader</Filter>
-    </None>
     <None Include="SphericalHarmonics_CS.glsl">
       <Filter>Shader</Filter>
     </None>
@@ -265,5 +262,6 @@
     <None Include="ShadingModelSubSurface_FS.glsl">
       <Filter>Shader</Filter>
     </None>
+    <None Include="DfgIBL_FS.glsl" />
   </ItemGroup>
 </Project>
