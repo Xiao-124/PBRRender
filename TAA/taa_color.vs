@@ -9,7 +9,6 @@ uniform mat4 projection;
 uniform int offsetIdx;
 
 
-
 uniform mat4 preProjection;
 uniform mat4 preView;
 uniform mat4 preModel;
@@ -40,16 +39,35 @@ void main()
         Halton_2_3[offsetIdx].x * deltaWidth,
         Halton_2_3[offsetIdx].y * deltaHeight
     );
+
+    //jitter * (2.0f / vec2{ svp.width, svp.height }
     mat4 jitterMat = projection;
     jitterMat[2][0] += jitter.x;
     jitterMat[2][1] += jitter.y;
 
     vec3 nowPositon = aPos;
 
+    int preOffsetIdx = offsetIdx;
+    if(preOffsetIdx == 0)
+    {
+        preOffsetIdx = 7;
+    }
+    else
+    {
+        preOffsetIdx = offsetIdx-1;
+    }
 
-    gl_Position = jitterMat * view * model * vec4(nowPositon, 1.0);
-	
-	preScreenPosition = preProjection * preView * preModel * vec4(nowPositon, 1.0);
+    vec2 preJitter = vec2(
+        Halton_2_3[preOffsetIdx].x * deltaWidth,
+        Halton_2_3[preOffsetIdx].y * deltaHeight
+    );
+    mat4 prejitterMat = projection;
+    prejitterMat[2][0] -= preJitter.x;
+    prejitterMat[2][1] -= preJitter.y; 
+
+    gl_Position = jitterMat * view * model * vec4(nowPositon, 1.0);	
+	preScreenPosition = prejitterMat * preView * preModel * vec4(nowPositon, 1.0);
+
     // 注意这里就不要添加jitter了
     nowScreenPosition = projection * view * model * vec4(nowPositon, 1.0);
     

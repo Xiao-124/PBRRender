@@ -28,144 +28,6 @@ glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 using namespace std;
 
-/*
-int main()
-{
-
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-    glfwSwapInterval(0);
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glewInit();
-  
-
-    Shader lightingShader("color.vs", "color.fs");
-   
-    float vertices[] = {
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-
-        -0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-        -0.5f, -0.5f,  0.5f,
-
-        -0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-        -0.5f, -0.5f,  0.5f,
-        -0.5f, -0.5f, -0.5f,
-
-        -0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f, -0.5f,
-    };
-
-
-    unsigned int VBO, cubeVAO;
-    glGenVertexArrays(1, &cubeVAO);
-    glGenBuffers(1, &VBO);
-    glBindVertexArray(cubeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glBindVertexArray(0);
-
-
-
-    glm::mat4 view = camera.GetViewMatrix();
-    while (!glfwWindowShouldClose(window))
-    {
-
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-        processInput(window);
-
-     
-        glEnable(GL_DEPTH_TEST);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        lightingShader.use();
-        lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-        lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-       
-
-
-
-        // view/projection transformations
-      
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-      
-        view = camera.GetViewMatrix();
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, 20.0f, glm::vec3(0, 1, 0));
-        lightingShader.setMat4("projection", projection);
-        lightingShader.setMat4("view", view);
-        lightingShader.setMat4("model", model);
-
-       
-        // render the cube
-        glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-
-       
-
-    }
-    glfwTerminate();
-    return 0;
-}
-*/
-
 
 //taaÐ§¹û
 
@@ -360,8 +222,8 @@ int main()
         processInput(window);
 
         //GL_INVALID_VALUE
-        glCopyImageSubData(gAlbedo, GL_TEXTURE_2D, 0, 0, 0, 0,
-            gPerAlbedo, GL_TEXTURE_2D, 0, 0, 0, 0, SCR_WIDTH, SCR_HEIGHT, 1);
+        //glCopyImageSubData(gAlbedo, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //    gPerAlbedo, GL_TEXTURE_2D, 0, 0, 0, 0, SCR_WIDTH, SCR_HEIGHT, 1);
         //std::cout << glGetError() << std::endl;
 
         glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -381,6 +243,7 @@ int main()
             Halton_2_3[frameIndex % 8].x * deltaWidth,
             Halton_2_3[frameIndex % 8].y * deltaHeight
         );
+
         // view/projection transformations
         preprojection = projection;
         projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
@@ -431,6 +294,20 @@ int main()
         glBindTextureUnit(3, gDepth);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        //glCopyImageSubData(gAlbedo, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //    gPerAlbedo, GL_TEXTURE_2D, 0, 0, 0, 0, SCR_WIDTH, SCR_HEIGHT, 1);
+
+        GLuint tempTBO;
+        glGenFramebuffers(1, &tempTBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, tempTBO);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPerAlbedo, 0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, tempTBO);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        //glDrawBuffers(1, fboBuffs);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();

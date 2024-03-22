@@ -136,6 +136,14 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="color.fs" />
+    <None Include="color.vs" />
+    <None Include="taa.fs" />
+    <None Include="taa.vs" />
+    <None Include="taa_color.fs" />
+    <None Include="taa_color.vs" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

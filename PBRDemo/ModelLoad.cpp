@@ -17,4 +17,5 @@ void CModelLoad::initV()
 
 void CModelLoad::updateV()
 {
+
 }
