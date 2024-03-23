@@ -38,6 +38,9 @@ void CModelRenderPass::initV()
 	auto groundShader = std::make_shared<CShader>("GroundShadow_VS.glsl", "GroundShadow_FS.glsl");
 	ElayGraphics::ResourceManager::registerSharedData("GroundShader", groundShader);
 
+	
+
+
 }
 
 void CModelRenderPass::updateV()
@@ -130,7 +133,38 @@ void CModelRenderPass::updateV()
 	m_pShader->setFloatUniformValue("material_subsurfacePower", material.subsurfacePower);
 
 
+	glm::mat4 u_ProjectionMatrix = ElayGraphics::Camera::getMainCameraProjectionMatrix();
+	glm::mat4 u_ViewMatrix  = ElayGraphics::Camera::getMainCameraViewMatrix();
+	static int pre_frameId = -1;
+	int frameId = (pre_frameId + 1) % 8;
+	pre_frameId++;
+	const glm::vec2 Halton_2_3[8] =
+	{
+		glm::vec2(0.0f, -1.0f / 3.0f),
+		glm::vec2(-1.0f / 2.0f, 1.0f / 3.0f),
+		glm::vec2(1.0f / 2.0f, -7.0f / 9.0f),
+		glm::vec2(-3.0f / 4.0f, -1.0f / 9.0f),
+		glm::vec2(1.0f / 4.0f, 5.0f / 9.0f),
+		glm::vec2(-1.0f / 4.0f, -5.0f / 9.0f),
+		glm::vec2(3.0f / 4.0f, 1.0f / 9.0f),
+		glm::vec2(-7.0f / 8.0f, 7.0f / 9.0f)
+	};
 
+
+	float deltaWidth = 1.0 / albeo->Width, deltaHeight = 1.0 / albeo->Height;
+	glm::vec2 jitter = glm::vec2(
+		Halton_2_3[frameId].x * deltaWidth,
+		Halton_2_3[frameId].y * deltaHeight
+	);
+
+	//jitter * (2.0f / vec2{ svp.width, svp.height }
+	glm::mat4 jitterMat = u_ProjectionMatrix;
+	jitterMat[2][0] += jitter.x;
+	jitterMat[2][1] += jitter.y;
+
+
+	m_pShader->setMat4UniformValue("u_ProjectionMatrix", glm::value_ptr(jitterMat));
+	m_pShader->setMat4UniformValue("u_ViewMatrix", glm::value_ptr(u_ViewMatrix));
 	
 	auto irradianceMap = ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("irradianceMap");
 	auto prefilterMap = ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("prefilterMap");
@@ -179,4 +213,16 @@ void CModelRenderPass::updateV()
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+
+
+	
+
+
+
+
+
+
+
 }

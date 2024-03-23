@@ -217,6 +217,8 @@
     <None Include="SphericalHarmonics_CS.glsl" />
     <None Include="SSAO_FS.glsl" />
     <None Include="SSAO_VS.glsl" />
+    <None Include="Taa_FS.glsl" />
+    <None Include="Taa_VS.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

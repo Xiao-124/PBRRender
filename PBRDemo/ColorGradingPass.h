@@ -150,6 +150,9 @@ private:
     // Output color space
     ColorSpace outputColorSpace = Rec709 - sRGB - D65;
     
+    std::shared_ptr<CShader> taaShader;
+    GLuint taaFBO;
+    std::shared_ptr<ElayGraphics::STexture> histroyTexture;
 
 protected:
     // prevent heap allocation

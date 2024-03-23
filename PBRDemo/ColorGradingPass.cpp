@@ -10,6 +10,9 @@
 #include "Common.h"
 #include "Interface.h"
 #include "Shader.h"
+#include <GLM/glm.hpp>
+#include <GLM/gtc/matrix_transform.hpp>
+#include <GLM/gtc/type_ptr.hpp>
 //#include "CustomGUI.h"
 
 bool GenericToneMapperSettings::operator==(const GenericToneMapperSettings& rhs) const
@@ -791,7 +794,23 @@ void CColorGradingPass::initV()
     }
    
     m_pShader = std::make_shared<CShader>("ColorGrading_VS.glsl", "ColorGrading_FS.glsl");
-    
+    taaShader = std::make_shared<CShader>("Taa_VS.glsl", "Taa_FS.glsl");
+
+
+    auto TextureConfig4Albedo = std::make_shared<ElayGraphics::STexture>();
+    TextureConfig4Albedo->InternalFormat = GL_RGBA32F;
+    TextureConfig4Albedo->ExternalFormat = GL_RGBA;
+    TextureConfig4Albedo->DataType = GL_FLOAT;
+    genTexture(TextureConfig4Albedo);
+ 
+    histroyTexture = std::make_shared<ElayGraphics::STexture>();
+    histroyTexture->InternalFormat = GL_RGBA32F;
+    histroyTexture->ExternalFormat = GL_RGBA;
+    histroyTexture->DataType = GL_FLOAT;
+    genTexture(histroyTexture);
+
+    taaFBO = genFBO({ TextureConfig4Albedo});
+    ElayGraphics::ResourceManager::registerSharedData("TaaAlbedo", TextureConfig4Albedo);
 
 }
 
@@ -1072,14 +1091,136 @@ void CColorGradingPass::updateV()
 
     }
 
+
+
+    std::shared_ptr<ElayGraphics::STexture> ComputeTexture = (ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("TextureConfig4Albedo"));
+    std::shared_ptr<ElayGraphics::STexture> mLutHandle = (ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("mLutHandle"));
+    std::shared_ptr<ElayGraphics::STexture> depthTexture = (ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("DepthTexture"));
+    std::shared_ptr<ElayGraphics::STexture> TaaAlbedo = (ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("TaaAlbedo"));
+
+    static int pre_frameId = -1;
+
+    glm::mat4 normalizedToClip
+    {
+        2, 0, 0, -1,
+        0, 2, 0, -1,
+        0, 0, 1,  0,
+        0, 0, 0,  1
+    };
+    normalizedToClip = glm::transpose(normalizedToClip);
+
+    constexpr glm::vec2 sampleOffsets[9] = 
+    {
+            { -1.0f, -1.0f }, {  0.0f, -1.0f }, {  1.0f, -1.0f },
+            { -1.0f,  0.0f }, {  0.0f,  0.0f }, {  1.0f,  0.0f },
+            { -1.0f,  1.0f }, {  0.0f,  1.0f }, {  1.0f,  1.0f },
+    };
+
+    constexpr glm::vec2 subSampleOffsets[4] = {
+            { -0.25f, 0.25f }, {  0.25f, 0.25f }, { 0.25f, -0.25f }, { -0.25f, -0.25f }
+    };
+
+
+    glm::mat4 u_ProjectionMatrix = ElayGraphics::Camera::getMainCameraProjectionMatrix();
+    glm::mat4 u_ViewMatrix = ElayGraphics::Camera::getMainCameraViewMatrix();
+    glm::mat4 u_PreViewMatrix = ElayGraphics::Camera::getMainCameraPrevViewMatrix();
+
+    glm::mat4 projection = u_ProjectionMatrix * u_ViewMatrix;
+    int frameId = (pre_frameId + 1)%8;
+    pre_frameId++;
+    const glm::vec2 Halton_2_3[8] =
+    {
+        glm::vec2(0.0f, -1.0f / 3.0f),
+        glm::vec2(-1.0f / 2.0f, 1.0f / 3.0f),
+        glm::vec2(1.0f / 2.0f, -7.0f / 9.0f),
+        glm::vec2(-3.0f / 4.0f, -1.0f / 9.0f),
+        glm::vec2(1.0f / 4.0f, 5.0f / 9.0f),
+        glm::vec2(-1.0f / 4.0f, -5.0f / 9.0f),
+        glm::vec2(3.0f / 4.0f, 1.0f / 9.0f),
+        glm::vec2(-7.0f / 8.0f, 7.0f / 9.0f)
+    };
+
+
+    float deltaWidth = 1.0 / ComputeTexture->Width, deltaHeight = 1.0 / ComputeTexture->Height;
+    glm::vec2 jitter = glm::vec2(
+        Halton_2_3[frameId].x * deltaWidth,
+        Halton_2_3[frameId].y * deltaHeight
+    );
+
+    //jitter * (2.0f / vec2{ svp.width, svp.height }
+    glm::mat4 jitterMat = projection;
+    jitterMat[2][0] += jitter.x;
+    jitterMat[2][1] += jitter.y;
+
+    glm::vec4 sum = glm::vec4(0.0f);
+    glm::vec4 weights[9];
+    bool upscaling = false;
+    float filterWidth = 1.0f;
+    for (size_t i = 0; i < 9; i++) 
+    {
+        glm::vec2 const o = sampleOffsets[i];
+        for (size_t j = 0; j < 4; j++) 
+        {
+            glm::vec2 const s = upscaling ? subSampleOffsets[j] : glm::vec2{ 0 };
+            glm::vec2 const d = (o - jitter - s) / filterWidth;
+            // This is a gaussian fit of a 3.3-wide Blackman-Harris window
+            // see: "High Quality Temporal Supersampling" by Brian Karis
+            weights[i][j] = std::exp(-2.29f * (d.x * d.x + d.y * d.y));
+        }
+        sum += weights[i];
+    }
+    for (auto& w : weights) 
+    {
+        w /= sum;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, taaFBO);
+    glClearColor(1, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    taaShader->activeShader();
+    taaShader->setTextureUniformValue("materialParams_color", ComputeTexture);
+    taaShader->setTextureUniformValue("materialParams_depth", depthTexture);
+    taaShader->setTextureUniformValue("materialParams_history", histroyTexture);
+
+    taaShader->setFloatUniformValue("materialParams_alpha", 0.12f);
+
+    for (int i = 0; i < 9; i++)
+    {
+        std::string filterWeights = "materialParams_filterWeights[" + std::to_string(i) + "]";
+        taaShader->setFloatUniformValue(filterWeights.c_str(), weights[i][0], weights[i][1], weights[i][2], weights[i][3]);       
+    }
+
+    glm::mat4 historyProjection = u_ProjectionMatrix * u_PreViewMatrix;
+    if (pre_frameId == 0)
+    {
+        historyProjection = projection;
+    }
+    
+    taaShader->setFloatUniformValue("materialParams_jitter", jitter[0], jitter[1]);
+    taaShader->setMat4UniformValue("materialParams_reprojection", glm::value_ptr(historyProjection * glm::inverse(projection)  *normalizedToClip));
+    drawQuad();
+
+
+    GLuint tempTBO;
+    glGenFramebuffers(1, &tempTBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, tempTBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, histroyTexture->TextureID, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, tempTBO);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, taaFBO);
+    //glDrawBuffers(1, fboBuffs);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glBlitFramebuffer(0, 0, histroyTexture->Width, histroyTexture->Height, 0, 0, histroyTexture->Width, histroyTexture->Height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+
+
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(1, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_pShader->activeShader();
     m_pShader->setFloatUniformValue("lutSize", 0.5f / this->dimension, (this->dimension - 1.0f) / this->dimension);
-    std::shared_ptr<ElayGraphics::STexture> ComputeTexture = (ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("TextureConfig4Albedo"));
-    std::shared_ptr<ElayGraphics::STexture> mLutHandle = (ElayGraphics::ResourceManager::getSharedDataByName<std::shared_ptr<ElayGraphics::STexture>>("mLutHandle"));
-    m_pShader->setTextureUniformValue("u_Texture2D", ComputeTexture);
+    
+    m_pShader->setTextureUniformValue("u_Texture2D", TaaAlbedo);
     m_pShader->setTextureUniformValue("u_Grading3D", mLutHandle);
 
     drawQuad();

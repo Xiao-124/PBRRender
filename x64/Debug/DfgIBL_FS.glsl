@@ -1,4 +1,4 @@
-﻿#version 430 core
+#version 430 core
 out vec3 FragColor;
 in vec2 TexCoords;
 
@@ -77,31 +77,6 @@ vec2 DFV_Multiscatter(float NoV, float linearRoughness, int numSamples)
         {
             const float v = Visibility(NoV, NoL, linearRoughness) * NoL * (VoH / NoH);
             const float Fc = pow5(1 - VoH);
-            /*
-             * Assuming f90 = 1
-             *   Fc = (1 - V•H)^5
-             *   F(h) = f0*(1 - Fc) + Fc
-             *
-             * f0 and f90 are known at runtime, but thankfully can be factored out, allowing us
-             * to split the integral in two terms and store both terms separately in a LUT.
-             *
-             * At runtime, we can reconstruct Er() exactly as below:
-             *
-             *            4                <v•h>
-             *   DFV.x = --- ∑ Fc V(v, l) ------- <n•l>
-             *            N  h             <n•h>
-             *
-             *
-             *            4                <v•h>
-             *   DFV.y = --- ∑    V(v, l) ------- <n•l>
-             *            N  h             <n•h>
-             *
-             *
-             *   Er() = (1 - f0) * DFV.x + f0 * DFV.y
-             *
-             *        = mix(DFV.xxx, DFV.yyy, f0)
-             *
-             */
             r.x += v * Fc;
             r.y += v;
         }

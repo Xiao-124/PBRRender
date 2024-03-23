@@ -19,4 +19,6 @@ private:
 	std::shared_ptr<CShader> standardModelShader;
 	std::shared_ptr<CShader> clothModelShader;
 	std::shared_ptr<CShader> subsurafceModelShader;
+
+	
 };

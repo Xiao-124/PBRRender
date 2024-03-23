@@ -4,12 +4,9 @@ layout(location = 1) in vec3 _Normal;
 layout(location = 2) in vec2 _TexCoord;
 layout(location = 3) in vec3 _Tangent;
 
-layout(std140, binding = 0) uniform u_Matrices4ProjectionWorld
-{
-	mat4 u_ProjectionMatrix;
-	mat4 u_ViewMatrix;
-};
 
+uniform mat4 u_ProjectionMatrix;
+uniform mat4 u_ViewMatrix;
 
 void toTangentFrame(const highp vec4 q, out highp vec3 n) 
 {
