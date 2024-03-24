@@ -146,6 +146,8 @@
     <None Include="PrecomputeNetDensityToAtmTop_FS.glsl" />
     <None Include="PrecomputeNetDensityToAtmTop_VS.glsl" />
     <None Include="PrecomputeSingleScattering_CS.glsl" />
+    <None Include="Sun_FS.glsl" />
+    <None Include="Sun_VS.glsl" />
     <None Include="UpdateHighOrderScattering_CS.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

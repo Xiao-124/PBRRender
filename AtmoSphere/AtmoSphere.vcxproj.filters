@@ -61,5 +61,11 @@
     <None Include="PrecomputeAmbientSkyLight_FS.glsl">
       <Filter>Shader</Filter>
     </None>
+    <None Include="Sun_VS.glsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="Sun_FS.glsl">
+      <Filter>Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

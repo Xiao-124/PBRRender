@@ -305,11 +305,11 @@ void EpipolarLightScattering::initV()
 	TextureConfig4Albedo->Width = 1024;
 	TextureConfig4Albedo->Height = 1024;
 	genTexture(TextureConfig4Albedo);
-
+    
 	m_FBO = genFBO({ TextureConfig4Albedo});
 	ElayGraphics::ResourceManager::registerSharedData("TextureConfig4Albedo", TextureConfig4Albedo);
 	ElayGraphics::ResourceManager::registerSharedData("mFBO", m_FBO);
-
+    
     AirScatteringAttribs airScatteringAttribs;
     m_sUBO = genBuffer(GL_SHADER_STORAGE_BUFFER, sizeof(airScatteringAttribs), &airScatteringAttribs, GL_STATIC_DRAW, 0);
 	m_pShader = std::make_shared<CShader>("PrecomputeNetDensityToAtmTop_VS.glsl", "PrecomputeNetDensityToAtmTop_FS.glsl");
@@ -328,17 +328,40 @@ void EpipolarLightScattering::initV()
     
     
     PrecomputeScatteringLUT();
+    glFlush();
+    //
+    //auto PrecomputeAmbientSkyLightTech = std::make_shared<CShader>("PrecomputeAmbientSkyLight_VS.glsl", "PrecomputeAmbientSkyLight_FS.glsl");
+    m_SunShader = std::make_shared<CShader>("Sun_VS.glsl", "Sun_FS.glsl");
 
 
-    auto PrecomputeAmbientSkyLightTech = std::make_shared<CShader>("PrecomputeAmbientSkyLight_VS.glsl", "PrecomputeAmbientSkyLight_FS.glsl");
-
-    
-
+   
 }
+
+
+
+
+
+
 
 void EpipolarLightScattering::updateV()
 {
 
-	
+    int width = ElayGraphics::WINDOW_KEYWORD::getWindowWidth();
+    glViewport(0, 0, ElayGraphics::WINDOW_KEYWORD::getWindowWidth(), ElayGraphics::WINDOW_KEYWORD::getWindowHeight());
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    m_SunShader->activeShader();
+    m_SunShader->setMat4UniformValue("mProj", glm::value_ptr(ElayGraphics::Camera::getMainCameraProjectionMatrix() * ElayGraphics::Camera::getMainCameraViewMatrix())  );
+    m_SunShader->setFloatUniformValue("f4LightScreenPos", 0, 0, 0, 0);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    //drawQuad();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //glFlush();
 
 }

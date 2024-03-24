@@ -16,4 +16,6 @@ protected:
 private:
     GLuint m_FBO;
     GLuint m_sUBO;
+    std::shared_ptr<CShader> m_SunShader;
+
 };
