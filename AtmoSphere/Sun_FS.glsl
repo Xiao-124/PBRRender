@@ -33,7 +33,7 @@
 #define matrix mat4x4
 
 in float2 f2NormalizedXY;
-out float4 f4Color;
+out vec4 f4Color;
 
 #define PI 3.141592653
 #define MATRIX_ELEMENT(mat, row, col) mat[col][row]
@@ -62,7 +62,7 @@ void main()
 
 
     f4Color.rgb = sqrt(saturate(1.0 - dot(f2dXY, f2dXY))) * float3(1.0, 1.0, 1.0);
-    f4Color.a = 1.0;
+    f4Color.a = 1.0f;
     //f4Color = vec4(1.0f,0.0f,0.0f,1.0f);
 
 }
