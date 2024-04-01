@@ -431,44 +431,41 @@ void CCustomGUI::updateV()
             sliderAngle("IBL rotation", &light.iblRotation);
         }
         
-
-        std::vector<std::string> chooseType = {"Sun", "Point", "Direct", "Spot"};
+        if (collapsingHeader("Sunlight"))
+        {
+            checkBox("Enable sunlight", light.sunLight.enableSunlight);
+            sliderFloat("Sun intensity", &light.sunLight.sunlightIntensity, 0.0f, 150000.0f);
+            sliderFloat("Halo size", &light.sunLight.sunlightHaloSize, 1.01f, 40.0f);
+            sliderFloat("Halo falloff", &light.sunLight.sunlightHaloFalloff, 4.0f, 1024.0f);
+            sliderFloat("Sun radius", &light.sunLight.sunlightAngularRadius, 0.1f, 10.0f);
+            directionWidget("Sun direction", &light.sunLight.sunlightDirection[0]);
+        }
+        std::vector<std::string> chooseType = {"Point", "Spot" };
         combo("Type##lightType", light.lightType, chooseType);
-        if (light.lightType == 0)
+        if (button("AddLight"))
         {
-            if (collapsingHeader("Sunlight"))
+            if (light.lightType == 0)
             {
-                checkBox("Enable sunlight", light.sunLight.enableSunlight);
-                sliderFloat("Sun intensity", &light.sunLight.sunlightIntensity, 0.0f, 150000.0f);
-                sliderFloat("Halo size", &light.sunLight.sunlightHaloSize, 1.01f, 40.0f);
-                sliderFloat("Halo falloff", &light.sunLight.sunlightHaloFalloff, 4.0f, 1024.0f);
-                sliderFloat("Sun radius", &light.sunLight.sunlightAngularRadius, 0.1f, 10.0f);
-                directionWidget("Sun direction", &light.sunLight.sunlightDirection[0]);
+                light.pointLights.push_back(PointLightSetting());
+            }
+            else if (light.lightType == 1)
+            {
+
             }
         }
-        else if (light.lightType == 1)
+        for (int i = 0; i < light.pointLights.size(); i++)
         {
-            if (collapsingHeader("PointLight"))
+            if (collapsingHeader("Light" + std::to_string(i)))
             {
-                if (button("AddLight"))
+                checkBox("Enablelight##" + std::to_string(i), light.pointLights[i].enable);
+                sliderFloat("Intensity##" + std::to_string(i), &light.pointLights[i].pointlightIntensity, 0, 1);
+                inputFloat3("Position##" + std::to_string(i), light.pointLights[i].pointLightPosition);
+                if (button("DeleteLight##" + std::to_string(i)))
                 {
-                    light.pointLights.push_back(PointLightSetting());
-                }
-                for (int i = 0; i < light.pointLights.size(); i++)
-                {
-                    if (collapsingHeader("Light" + std::to_string(i)))
-                    {
-                        checkBox("Enablelight##" + std::to_string(i), light.pointLights[i].enable);
-                        sliderFloat("Intensity##" + std::to_string(i), &light.pointLights[i].pointlightIntensity, 0, 1);
-                        inputFloat3("Position##" + std::to_string(i), light.pointLights[i].pointLightPosition);
-                        if (button("DeleteLight##" + std::to_string(i)))
-                        {
-                            light.pointLights.erase(light.pointLights.begin() + i);
-                        }
-                    }
+                    light.pointLights.erase(light.pointLights.begin() + i);
                 }
             }
-        }
+        }      
         unIndent();
     }
     

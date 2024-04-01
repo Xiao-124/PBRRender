@@ -106,20 +106,33 @@ void CModelRenderPass::updateV()
 	m_pShader->setMat4UniformValue("u_ModelMatrix", glm::value_ptr(glm::mat4(1.0f)));
 
 	
-	m_pShader->setFloatUniformValue("lightDirection", lightDir.x, lightDir.y, lightDir.z);
-	m_pShader->setFloatUniformValue("sun", sun.x, sun.y, sun.z, sun.w);
-	m_pShader->setFloatUniformValue("lightColor", lightColor.x, lightColor.y, lightColor.z, lightIdentity);
+	m_pShader->setFloatUniformValue("directLight.lightDirection", lightDir.x, lightDir.y, lightDir.z);
+	m_pShader->setFloatUniformValue("directLight.sun", sun.x, sun.y, sun.z, sun.w);
+	m_pShader->setFloatUniformValue("directLight.lightColor", lightColor.x, lightColor.y, lightColor.z, lightIdentity);
 	
+
+	for (int i = 0; i < light.pointLights.size(); i++)
+	{
+		m_pShader->setFloatUniformValue("punctualLight[" + std::to_string(i) + "].positionFalloff", 
+			light.pointLights[i].pointLightPosition.x, light.pointLights[i].pointLightPosition.y, 
+			light.pointLights[i].pointLightPosition.z);
+
+		m_pShader->setFloatUniformValue("punctualLight[" + std::to_string(i) + "].color", light.pointLights[i].pointlightColor.x, 
+			light.pointLights[i].pointlightColor.y, 
+			light.pointLights[i].pointlightColor.z, light.pointLights[i].pointlightIntensity);
+		m_pShader->setIntUniformValue("punctualLight[" + std::to_string(i) + "].type", 0);
+	}
+	m_pShader->setIntUniformValue("punctualLight_Num", light.pointLights.size());
 	
 	m_pShader->setFloatUniformValue("iblLuminance", iblIntensity);
 
 	LinearColorA mcolor = Color::toLinear<ACCURATE>(sRGBColorA(material.baseColor.r, material.baseColor.g, material.baseColor.b, material.baseColor.a));
-	m_pShader->setFloatUniformValue("baseColor", mcolor.r, mcolor.g, mcolor.b, mcolor.a);
-	m_pShader->setFloatUniformValue("metallic", material.metallic);
-	m_pShader->setFloatUniformValue("roughness", material.roughness);
-	m_pShader->setFloatUniformValue("reflectance", material.reflectance);
-	m_pShader->setFloatUniformValue("emissive", material.emissive.r, material.emissive.g, material.emissive.b, material.emissive.a);
-	m_pShader->setFloatUniformValue("ambientOcclusion", material.ambientOcclusion);
+	m_pShader->setFloatUniformValue("material_baseColor", mcolor.r, mcolor.g, mcolor.b, mcolor.a);
+	m_pShader->setFloatUniformValue("material_metallic", material.metallic);
+	m_pShader->setFloatUniformValue("material_roughness", material.roughness);
+	m_pShader->setFloatUniformValue("material_reflectance", material.reflectance);
+	m_pShader->setFloatUniformValue("material_emissive", material.emissive.r, material.emissive.g, material.emissive.b, material.emissive.a);
+	m_pShader->setFloatUniformValue("material_ambientOcclusion", material.ambientOcclusion);
 	
 	m_pShader->setFloatUniformValue("material_sheenColor", material.sheenColor.r, material.sheenColor.g, material.sheenColor.b);
 	m_pShader->setFloatUniformValue("material_sheenRoughness", material.sheenRoughness);

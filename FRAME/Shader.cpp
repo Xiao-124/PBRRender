@@ -238,6 +238,7 @@ GLvoid CShader::setFloatUniformValue(const std::string& vUniformName, GLfloat v0
 //Function:
 GLvoid CShader::setFloatUniformValue(const std::string& vUniformName, GLfloat v0, GLfloat v1, GLfloat v2) const
 {
+	int l = glGetUniformLocation(m_ShaderProgram, vUniformName.c_str());
 	glUniform3f(glGetUniformLocation(m_ShaderProgram, vUniformName.c_str()), v0, v1, v2);
 }
 

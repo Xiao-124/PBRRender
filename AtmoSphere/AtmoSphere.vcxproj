@@ -130,25 +130,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="EpipolarLightScatteringPass.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="TerrainRenderPass.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EpipolarLightScatteringPass.h" />
+    <ClInclude Include="TerrainRenderPass.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="CombineScatteringOrders_CS.glsl" />
-    <None Include="ComputeScatteringOrder_CS.glsl" />
-    <None Include="ComputeSctrRadiance_CS.glsl" />
-    <None Include="InitHighOrderScattering_CS.glsl" />
-    <None Include="PrecomputeAmbientSkyLight_FS.glsl" />
-    <None Include="PrecomputeAmbientSkyLight_VS.glsl" />
-    <None Include="PrecomputeNetDensityToAtmTop_FS.glsl" />
-    <None Include="PrecomputeNetDensityToAtmTop_VS.glsl" />
-    <None Include="PrecomputeSingleScattering_CS.glsl" />
-    <None Include="Sun_FS.glsl" />
-    <None Include="Sun_VS.glsl" />
-    <None Include="UpdateHighOrderScattering_CS.glsl" />
+    <None Include="RenderTransmittanceLut_FS.glsl" />
+    <None Include="RenderTransmittanceLut_VS.glsl" />
+    <None Include="TerrainShadowMap_FS.glsl" />
+    <None Include="TerrainShadowMap_VS.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

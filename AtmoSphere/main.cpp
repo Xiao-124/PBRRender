@@ -1,5 +1,6 @@
 #include "Interface.h"
 #include "EpipolarLightScatteringPass.h"
+#include "TerrainRenderPass.h"
 int main()
 {
 
@@ -10,7 +11,7 @@ int main()
 	//ElayGraphics::COMPONENT_CONFIG::setIsEnableGUI(true);
 
 
-	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<EpipolarLightScattering>("EpipolarLightScatteringPass", 0));
+	ElayGraphics::ResourceManager::registerRenderPass(std::make_shared<TerrainRenderPass>("TerrainRenderPass", 0));
 
 	ElayGraphics::App::initApp();
 	ElayGraphics::App::updateApp();

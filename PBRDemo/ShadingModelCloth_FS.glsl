@@ -17,20 +17,43 @@ in  vec3 v2f_Normal;
 in  vec4 vertex_worldTangent;
 out vec4 Albedo_;
 
-uniform vec3 lightPos;
-uniform vec3 lightDirection;
-uniform vec4 lightColor;
-uniform vec3 cameraPos;
-uniform vec4 sun;
+
+
+struct DirectLight
+{   
+    vec4 lightColor;
+    vec4 sun;
+    vec3 lightDirection;
+    float use_light;
+};
+
+
+struct PunctualLight
+{
+    vec4 positionFalloff;
+    vec3 direction;
+    vec4 color;
+    vec2 scaleOffset;
+    int type;
+};
+
+//light
+uniform DirectLight directLight;
+uniform PunctualLight punctualLight[10];
+uniform int punctualLight_Num;
+uniform vec2 lightFarAttenuationParams;
+
 uniform float exposure;
 uniform float iblLuminance;
+uniform vec3 cameraPos;
 
-uniform vec4  baseColor;
-uniform float metallic;
-uniform float roughness;
-uniform float reflectance;
-uniform vec4  emissive;
-uniform float ambientOcclusion;
+
+uniform vec4  material_baseColor;
+uniform float material_metallic;
+uniform float material_roughness;
+uniform float material_reflectance;
+uniform vec4  material_emissive;
+uniform float material_ambientOcclusion;
 uniform vec3  material_sheenColor;
 uniform float material_sheenRoughness;
 uniform float material_clearCoat;
@@ -669,13 +692,13 @@ void getPixelParams(const MaterialInputs material, out PixelParams pixel)
 
 vec3 sampleSunAreaLight(const vec3 lightDirection) 
 {
-    if (sun.w >= 0.0) 
+    if (directLight.sun.w >= 0.0) 
     {
         float LoR = dot(lightDirection, shading_reflected);
-        float d = sun.x;
+        float d = directLight.sun.x;
         highp vec3 s = shading_reflected - LoR * lightDirection;
         return LoR < d ?
-                normalize(lightDirection * d + normalize(s) * sun.y) : shading_reflected;
+                normalize(lightDirection * d + normalize(s) * directLight.sun.y) : shading_reflected;
     }
     return lightDirection;
 }
@@ -684,13 +707,86 @@ Light getDirectionalLight()
 {
     Light light;
     // note: lightColorIntensity.w is always premultiplied by the exposure
-    light.colorIntensity = lightColor;
-    light.l = sampleSunAreaLight(lightDirection);
+    light.colorIntensity = directLight.lightColor;
+    light.l = sampleSunAreaLight(directLight.lightDirection);
     light.attenuation = 1.0;
     light.NoL = saturate(dot(shading_normal, light.l));
     return light;
 }
 
+float computePreExposedIntensity(const highp float intensity, const highp float exposure) 
+{
+    return intensity * exposure;
+}
+
+float getSquareFalloffAttenuation(float distanceSquare, float falloff) 
+{
+    float factor = distanceSquare * falloff;
+    float smoothFactor = saturate(1.0 - factor * factor);
+    // We would normally divide by the square distance here
+    // but we do it at the call site
+    return smoothFactor * smoothFactor;
+}
+
+float getDistanceAttenuation(const highp vec3 posToLight, float falloff) 
+{
+    float distanceSquare = dot(posToLight, posToLight);
+    float attenuation = getSquareFalloffAttenuation(distanceSquare, falloff);
+    // light far attenuation
+    highp vec3 v = getWorldPosition() - getWorldCameraPosition();
+    attenuation *= saturate(lightFarAttenuationParams.x - dot(v, v) * lightFarAttenuationParams.y);
+    // Assume a punctual light occupies a volume of 1cm to avoid a division by 0
+    return attenuation / max(distanceSquare, 1e-4);
+}
+
+Light getLight(const uint lightIndex) 
+{
+    
+    highp vec4 positionFalloff = punctualLight[lightIndex].positionFalloff;
+    highp vec3 direction = punctualLight[lightIndex].direction;
+
+    vec4 colorIES = punctualLight[lightIndex].color;
+    highp vec2 scaleOffset = punctualLight[lightIndex].scaleOffset;
+    highp float intensity = colorIES.w;
+    highp uint typeShadow = punctualLight[lightIndex].type;
+
+
+    // poition-to-light vector
+    highp vec3 worldPosition = getWorldPosition();
+    highp vec3 posToLight = positionFalloff.xyz - worldPosition;
+
+    // and populate the Light structure
+    Light light;
+    light.colorIntensity.rgb = colorIES.rgb;
+    light.colorIntensity.w = computePreExposedIntensity(intensity, exposure);
+    light.l = normalize(posToLight);
+    light.attenuation = getDistanceAttenuation(posToLight, positionFalloff.w);
+    light.direction = direction;
+    light.NoL = saturate(dot(shading_normal, light.l));
+    light.worldPosition = positionFalloff.xyz;
+    return light;
+}
+
+void evaluatePunctualLights(const MaterialInputs material,
+        const PixelParams pixel, inout vec3 color) 
+{
+
+    // Iterate point lights
+    for(uint lightIndex = 0; lightIndex < punctualLight_Num; lightIndex++)
+    {
+        Light light = getLight(lightIndex);
+        float visibility = 1.0;
+        if (light.NoL > 0.0) 
+        {     
+            if (visibility <= 0.0) 
+            {
+                continue;
+            }
+            color.rgb += surfaceShading(pixel, light, visibility);
+        }
+    }
+   
+}
 
 void evaluateDirectionalLight(const MaterialInputs material,
         const PixelParams pixel, inout vec3 color) 
@@ -875,7 +971,7 @@ vec4 evaluateLights(const MaterialInputs material)
     evaluateDirectionalLight(material, pixel, color);
 
     //点光或者聚光
-    //evaluatePunctualLights(material, pixel, color);
+    evaluatePunctualLights(material, pixel, color);
 
     color *= material.baseColor.a;
 
@@ -902,12 +998,12 @@ vec4 evaluateMaterial(const MaterialInputs material)
 void main()
 {
     MaterialInputs inputs;
-    inputs.baseColor = baseColor;
-    inputs.metallic = metallic;
-    inputs.roughness = roughness;
-    inputs.reflectance = reflectance; 
-    inputs.emissive = emissive;
-    inputs.ambientOcclusion = ambientOcclusion;
+    inputs.baseColor = material_baseColor;
+    inputs.metallic = material_metallic;
+    inputs.roughness = material_roughness;
+    inputs.reflectance = material_reflectance; 
+    inputs.emissive = material_emissive;
+    inputs.ambientOcclusion = material_ambientOcclusion;
     inputs.sheenColor = material_sheenColor;
     inputs.sheenRoughness = material_sheenRoughness;
     inputs.clearCoat = material_clearCoat;

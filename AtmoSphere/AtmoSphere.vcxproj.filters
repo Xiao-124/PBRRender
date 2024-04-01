@@ -14,57 +14,33 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="Shader">
-      <UniqueIdentifier>{56c14d14-a37c-4092-96a0-743487fc20db}</UniqueIdentifier>
+      <UniqueIdentifier>{65ba7e59-d990-4ec8-858f-7fff3a8d4d70}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="EpipolarLightScatteringPass.cpp">
+    <ClCompile Include="TerrainRenderPass.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EpipolarLightScatteringPass.h">
+    <ClInclude Include="TerrainRenderPass.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="PrecomputeNetDensityToAtmTop_VS.glsl">
+    <None Include="TerrainShadowMap_VS.glsl">
       <Filter>Shader</Filter>
     </None>
-    <None Include="PrecomputeNetDensityToAtmTop_FS.glsl">
+    <None Include="TerrainShadowMap_FS.glsl">
       <Filter>Shader</Filter>
     </None>
-    <None Include="PrecomputeSingleScattering_CS.glsl">
+    <None Include="RenderTransmittanceLut_FS.glsl">
       <Filter>Shader</Filter>
     </None>
-    <None Include="ComputeSctrRadiance_CS.glsl">
-      <Filter>Shader</Filter>
-    </None>
-    <None Include="ComputeScatteringOrder_CS.glsl">
-      <Filter>Shader</Filter>
-    </None>
-    <None Include="InitHighOrderScattering_CS.glsl">
-      <Filter>Shader</Filter>
-    </None>
-    <None Include="UpdateHighOrderScattering_CS.glsl">
-      <Filter>Shader</Filter>
-    </None>
-    <None Include="CombineScatteringOrders_CS.glsl">
-      <Filter>Shader</Filter>
-    </None>
-    <None Include="PrecomputeAmbientSkyLight_VS.glsl">
-      <Filter>Shader</Filter>
-    </None>
-    <None Include="PrecomputeAmbientSkyLight_FS.glsl">
-      <Filter>Shader</Filter>
-    </None>
-    <None Include="Sun_VS.glsl">
-      <Filter>Shader</Filter>
-    </None>
-    <None Include="Sun_FS.glsl">
+    <None Include="RenderTransmittanceLut_VS.glsl">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>
