@@ -24,6 +24,7 @@
     <ProjectGuid>{ab90613f-6e93-4fc6-9720-e75878654d35}</ProjectGuid>
     <RootNamespace>PBRDemo</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>PBRRender</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
